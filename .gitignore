@@ -1,0 +1,83 @@
+# Dependencies
+**/node_modules/
+**/.pnp/
+**/.pnp.js
+**/jspm_packages/
+**/typings/
+**/bower_components/ # Added: Bower dependency directory
+
+# Production Build and Output
+**/dist/
+**/dist-ssr/
+**/build/
+**/bin/
+**/*.tgz
+**/lib-cov/
+**/build/Release/
+
+# Configuration and Sensitive Data
+**/.env
+**/.env.local
+**/.env.development.local
+**/.env.test.local
+**/.env.production.local
+**/*.local
+**/.npmrc
+**/cypress.env.json
+
+# Cache and Temporary Files
+**/.npm/
+**/.eslintcache
+**/.node_repl_history
+**/.yarn-integrity
+**/*.tsbuildinfo
+**/*.sw?
+**/.grunt/
+**/.lock-wscript
+**/.cache # Added: Parcel-bundler cache
+**/.next # Added: Next.js build output
+**/.nuxt # Added: Nuxt.js build output
+**/.vuepress/dist # Added: VuePress build output
+**/.serverless/ # Added: Serverless directories
+**/.fusebox/ # Added: FuseBox cache
+**/.dynamodb/ # Added: DynamoDB Local files
+
+# Logging
+**/logs/
+**/*.log
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/pnpm-debug.log*
+**/lerna-debug.log*
+
+# Runtime Data
+**/pids/
+**/*.pid
+**/*.seed
+**/*.pid.lock
+
+# Testing
+**/coverage/
+**/.nyc_output/
+
+# IDE and Development Tools
+**/.vscode/
+!**/.vscode/settings.json
+!**/.vscode/tasks.json
+!**/.vscode/launch.json
+!**/.vscode/extensions.json
+**/.idea/
+**/*.suo
+**/*.ntvs*
+**/*.njsproj
+**/*.sln
+**/.pulumi/
+**/#*#
+**/*.code-workspace # Added: VS Code workspace files
+**/.cursorignore # Added: Cursor IDE ignore file
+**/.scannerwork/ # Added: SonarQube scanner work directory
+
+# Operating System
+**/.DS_Store
+**/Thumbs.db

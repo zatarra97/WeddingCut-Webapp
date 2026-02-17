@@ -1,0 +1,13 @@
+{
+    "name": "orangepv-backoffice-webapp",
+    "main": "index.ts",
+    "devDependencies": {
+        "@types/node": "^18",
+        "typescript": "^5.0.0"
+    },
+    "dependencies": {
+        "@pulumi/aws": "^6.83.0",
+        "@pulumi/gitlab": "^9.0.0",
+        "@pulumi/pulumi": "^3.113.0"
+    }
+}

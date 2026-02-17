@@ -1,0 +1,42 @@
+# Regole Cursor per orangepv-backoffice-webapp
+
+## Pulizia Automatica del Whitespace
+- **SEMPRE** sostituisci le righe che contengono solo spazi o tabulazioni con righe completamente vuote
+- Usa il pattern regex `^[ \t]+$` per identificare righe con solo whitespace
+- Applica questa pulizia a tutti i file di codice: `.ts`, `.tsx`, `.js`, `.jsx`, `.json`, `.css`, `.html`, `.md`
+- Mantieni la consistenza nella formattazione del codice
+
+## Best Practices per il Codice
+- Usa ES modules (import/export) invece di CommonJS (require/module.exports)
+- Mantieni una formattazione consistente con 2 spazi per l'indentazione
+- Aggiungi sempre i tipi TypeScript appropriati
+- Usa nomi descrittivi per variabili e funzioni
+- Commenta il codice complesso in italiano
+
+## Struttura del Progetto
+- I componenti React vanno in `src/Components/`
+- Le pagine vanno in `src/Pages/`
+- I servizi API vanno in `src/services/`
+- I tipi TypeScript vanno in `src/types/`
+- Gli hook personalizzati vanno in `src/hooks/`
+
+## Gestione degli Errori
+- Usa sempre try-catch per le chiamate API
+- Gestisci gli errori di autenticazione (401) reindirizzando al login
+- Logga gli errori in console per il debugging
+
+## Formattazione
+- Rimuovi sempre le righe vuote con spazi o tabulazioni
+- Mantieni una riga vuota tra le sezioni logiche del codice
+- Non lasciare spazi extra alla fine delle righe
+- Usa la formattazione consistente per JSX/TSX
+
+## Sicurezza
+- Non committare mai token o credenziali nel codice
+- Usa variabili d'ambiente per le configurazioni sensibili
+- Valida sempre gli input utente
+
+## Performance
+- Usa React.memo per componenti che si aggiornano frequentemente
+- Implementa lazy loading per le pagine grandi
+- Ottimizza le chiamate API con caching quando appropriato 

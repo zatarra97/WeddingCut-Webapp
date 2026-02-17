@@ -1,0 +1,163 @@
+@import "tailwindcss";
+@plugin "flowbite-react/plugin/tailwindcss";
+@source "../.flowbite-react/class-list.json";
+@theme {
+	--color-primary: #febe10;
+	--color-primary-light: #fecb4d;
+	--color-primary-dark: #e5a800;
+
+	--color-secondary: #032b36;
+	--color-secondary-light: #032b36;
+	--color-secondary-dark: #032b36;
+
+	/* Font Family */
+	--font-family-sans: "Sora", ui-sans-serif, system-ui, sans-serif;
+	--default-font-family: "Sora", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Applica Sora a tutto il body */
+body {
+	font-family: "Sora", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Usa il font di default per le tabelle */
+table,
+table * {
+	font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+
+.cta {
+	@apply focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center mr-3 md:mr-0 uppercase;
+}
+
+.primary {
+	@apply text-white bg-blue-700 hover:bg-blue-800;
+}
+
+.animation-smooth {
+	@apply transition duration-200 ease-in-out;
+}
+
+.sidebar-normal {
+	@apply flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-200;
+}
+
+.sidebar-active {
+	@apply flex items-center p-2 text-gray-900 rounded-lg bg-gray-200;
+}
+
+.btn {
+	@apply focus:ring-4 focus:outline-none font-medium rounded-lg text-sm px-3 md:px-5 py-2.5 text-center md:min-w-[100px] cursor-pointer;
+}
+
+.btn-primary {
+	@apply hover:bg-primary-dark bg-primary text-white;
+}
+
+.btn-primary-wire {
+	@apply hover:bg-blue-100 bg-white text-primary border-primary-dark border;
+}
+
+.btn-secondary {
+	@apply hover:bg-slate-900 bg-slate-800 text-white;
+}
+
+.btn-secondary-wire {
+	@apply hover:bg-slate-100 bg-white text-slate-800 border-slate-800 border;
+}
+
+.btn-green {
+	@apply hover:bg-green-700 bg-green-500 text-white;
+}
+
+.btn-danger {
+	@apply hover:bg-red-700 bg-red-600 text-white;
+}
+
+.logoText {
+	color: #032b36;
+	font-family: "Great Vibes", cursive;
+}
+
+.deviceBox {
+	border-radius: 5px;
+	height: auto;
+	user-select: none;
+	-webkit-user-select: none; /* Safari */
+	-moz-user-select: none; /* Firefox */
+	-ms-user-select: none; /* IE10+/Edge */
+	width: fit-content;
+}
+
+.deviceName {
+	background: white;
+	color: black;
+	font-weight: 700;
+	padding: 1px 0;
+	text-align: center;
+	border-bottom-left-radius: 5px;
+	border-bottom-right-radius: 5px;
+}
+
+.deviceValue {
+	font-weight: 900;
+	text-align: center;
+	overflow-x: hidden;
+	padding: 3px 2px;
+	border-top-left-radius: 5px;
+	border-top-right-radius: 5px;
+}
+
+.wrapper {
+	position: relative;
+}
+
+.marker {
+	position: absolute;
+}
+
+/* 
+ * RIMOZIONE SPIN BUTTONS DAGLI INPUT NUMBER
+ * 
+ * Problema: I campi input[type="number"] mostrano automaticamente delle freccette 
+ * "su/giù" (spin buttons) che permettono di incrementare/decrementare il valore.
+ * Nelle tabelle in modalità modifica queste freccette non sono necessarie e
+ * creano confusione all'utente che preferisce inserire i valori manualmente.
+ * 
+ * Soluzione: Nascondere i spin buttons mantenendo tutti i benefici del type="number"
+ * (validazione numerica, tastiera numerica su mobile, ecc.)
+ */
+
+/* Firefox: Usa -moz-appearance per far apparire l'input come un normale textfield */
+input[type="number"] {
+	-moz-appearance: textfield;
+}
+
+/* 
+ * Chrome, Safari, Edge (WebKit): I spin buttons sono implementati come pseudo-elementi
+ * specifici che devono essere targetati direttamente per essere rimossi
+ */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+	-webkit-appearance: none;
+}
+
+/* Personalizzazione globale della scrollbar */
+* {
+	@apply [&::-webkit-scrollbar]:w-1 md:[&::-webkit-scrollbar]:w-2
+    [&::-webkit-scrollbar-track]:rounded-full
+    [&::-webkit-scrollbar-track]:bg-gray-100
+    [&::-webkit-scrollbar-thumb]:rounded-full
+    [&::-webkit-scrollbar-thumb]:bg-gray-300
+    [&::-webkit-scrollbar:horizontal]:h-2 md:[&::-webkit-scrollbar:horizontal]:h-2;
+}
+
+/* FORM COMPONENTS */
+.form-label {
+	@apply block text-gray-700 text-xs md:text-sm font-bold mb-2;
+}
+
+.form-input {
+	@apply text-gray-700 text-sm md:text-base;
+}
