@@ -1,5 +1,6 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
+import { genericGet } from "../../services/api-utility"
 
 const TABS = [
 	{ key: "all", label: "Tutte", count: 1 },
@@ -22,6 +23,14 @@ const PROJECTS_STATIC = [
 const Dashboard = () => {
 	const [activeTab, setActiveTab] = useState<TabKey>("all")
 	const activeLabel = TABS.find((t) => t.key === activeTab)?.label ?? "All"
+	const [apiStatus, setApiStatus] = useState<"idle" | "loading" | "ok" | "error">("idle")
+
+	useEffect(() => {
+		setApiStatus("loading")
+		genericGet("dashboard")
+			.then(() => setApiStatus("ok"))
+			.catch(() => setApiStatus("error"))
+	}, [])
 
 	return (
 		<div className="min-h-[calc(100vh-64px)]">
@@ -77,6 +86,22 @@ const Dashboard = () => {
 						</button>
 					</div>
 				</div>
+
+				{/* Banner stato API — solo per test */}
+				{apiStatus !== "idle" && (
+					<div className={`mb-4 flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium max-w-4xl ${
+						apiStatus === "loading" ? "bg-gray-100 text-gray-600" :
+						apiStatus === "ok"      ? "bg-green-50 text-green-700 border border-green-200" :
+						                          "bg-red-50 text-red-700 border border-red-200"
+					}`}>
+						{apiStatus === "loading" && <i className="fa-solid fa-spinner fa-spin" />}
+						{apiStatus === "ok"      && <i className="fa-solid fa-circle-check" />}
+						{apiStatus === "error"   && <i className="fa-solid fa-circle-xmark" />}
+						{apiStatus === "loading" && "Chiamata a GET /dashboard in corso…"}
+						{apiStatus === "ok"      && "GET /dashboard → { success: true } ✓"}
+						{apiStatus === "error"   && "GET /dashboard → errore (controlla console e backend)"}
+					</div>
+				)}
 
 				{/* Project cards */}
 				<div className="space-y-3 max-w-4xl">

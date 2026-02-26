@@ -3,6 +3,9 @@ import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-route
 import { CognitoUser, CognitoUserPool } from 'amazon-cognito-identity-js'
 import { Provider, ErrorBoundary } from '@rollbar/react';
 import Dashboard from './Pages/Dashboard/Dashboard'
+import AdminDashboard from './Pages/Admin/AdminDashboard'
+import Services from './Pages/Admin/Services/Services'
+import ServiceDetail from './Pages/Admin/Services/ServiceDetail'
 import NewOrder from './Pages/Orders/NewOrder'
 import Login from './Pages/Auth/Login'
 import Register from './Pages/Auth/Register'
@@ -10,12 +13,12 @@ import './App.css'
 import NotFound from './Pages/NotFound/NotFound'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
-import DemoModeModal from './Components/DemoModeModal'
 import Navbar from './Components/Navbar'
+import ProtectedRoute from './Components/ProtectedRoute'
 import { ThemeConfig } from "flowbite-react";
 import { ThemeInit } from "../.flowbite-react/init";
 
-import { LOCAL_STORAGE_KEYS } from './constants'
+import { LOCAL_STORAGE_KEYS, VALID_COGNITO_GROUPS, GROUP_TO_ROLE_MAP, USER_ROLES } from './constants'
 import { ping } from './services/api-utility'
 
 
@@ -32,6 +35,7 @@ const userPool = new CognitoUserPool(poolData);
 
 const AppContent: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [userRole, setUserRole] = useState<string | null>(null)
   const [user, setUser] = useState<CognitoUser | null>(null)
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const [connectionError, setConnectionError] = useState(false)
@@ -39,7 +43,6 @@ const AppContent: React.FC = () => {
     const savedState = localStorage.getItem(LOCAL_STORAGE_KEYS.SIDEBAR_EXPANDED)
     return savedState !== null ? savedState === 'true' : true
   })
-  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false)
   const navigate = useNavigate()
 
   const handleSidebarToggle = (isExpanded: boolean) => {
@@ -62,12 +65,6 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     checkAuthState();
   }, []);
-
-  useEffect(() => {
-    const handler = () => setIsDemoModalOpen(true)
-    window.addEventListener('open-demo-modal', handler as EventListener)
-    return () => window.removeEventListener('open-demo-modal', handler as EventListener)
-  }, [])
 
   useEffect(() => {
     const checkConnection = async () => {
@@ -114,12 +111,17 @@ const AppContent: React.FC = () => {
         const idToken = session.getIdToken().getJwtToken()
         const payload = JSON.parse(atob(idToken.split('.')[1]))
         const email = payload.email || payload['cognito:username'] || ''
+        const groups: string[] = payload['cognito:groups'] ?? []
+        const group = groups.find(g => (VALID_COGNITO_GROUPS as readonly string[]).includes(g))
+        const role = group ? GROUP_TO_ROLE_MAP[group] : null
         setIsAuthenticated(true)
         setUser(cognitoUser)
+        setUserRole(role)
         localStorage.setItem(LOCAL_STORAGE_KEYS.JWT_TOKEN, idToken)
         localStorage.setItem(LOCAL_STORAGE_KEYS.ID_TOKEN, idToken)
         localStorage.setItem(LOCAL_STORAGE_KEYS.ACCESS_TOKEN, session.getAccessToken().getJwtToken())
         if (email) localStorage.setItem(LOCAL_STORAGE_KEYS.USER_EMAIL, email)
+        if (role) localStorage.setItem(LOCAL_STORAGE_KEYS.USER_ROLE, role)
       } else {
         setIsAuthenticated(false)
         setUser(null)
@@ -142,10 +144,12 @@ const AppContent: React.FC = () => {
     if (cognitoUser) cognitoUser.signOut()
     setIsAuthenticated(false)
     setUser(null)
+    setUserRole(null)
     localStorage.removeItem(LOCAL_STORAGE_KEYS.JWT_TOKEN)
     localStorage.removeItem(LOCAL_STORAGE_KEYS.ID_TOKEN)
     localStorage.removeItem(LOCAL_STORAGE_KEYS.ACCESS_TOKEN)
     localStorage.removeItem(LOCAL_STORAGE_KEYS.USER_EMAIL)
+    localStorage.removeItem(LOCAL_STORAGE_KEYS.USER_ROLE)
     localStorage.removeItem(LOCAL_STORAGE_KEYS.RETURN_URL)
     redirectToLogin(false)
   }
@@ -165,31 +169,65 @@ const AppContent: React.FC = () => {
     return (
       <>
         <ToastContainer />
-        <DemoModeModal isOpen={isDemoModalOpen} onClose={() => setIsDemoModalOpen(false)} />
         <Routes>
           <Route path="/accesso/registrati" element={<Register />} />
-          <Route path="/accesso/login" element={<Login setIsAuthenticated={setIsAuthenticated} setUser={setUser} />} />
-          <Route path="*" element={<Login setIsAuthenticated={setIsAuthenticated} setUser={setUser} />} />
+          <Route path="/accesso/login" element={<Login setIsAuthenticated={setIsAuthenticated} setUser={setUser} setUserRole={setUserRole} />} />
+          <Route path="*" element={<Login setIsAuthenticated={setIsAuthenticated} setUser={setUser} setUserRole={setUserRole} />} />
         </Routes>
       </>
     )
   }
 
+  if (userRole === USER_ROLES.ADMIN) {
+    return (
+      <>
+        <Navbar
+          userEmail={localStorage.getItem(LOCAL_STORAGE_KEYS.USER_EMAIL) || ''}
+          onLogout={signOut}
+        />
+        <main className="pt-14 min-h-screen bg-gray-100">
+          <ToastContainer />
+          <Routes>
+            <Route path="/admin" element={<ProtectedRoute requiredRole={USER_ROLES.ADMIN}><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/admin/services" element={<ProtectedRoute requiredRole={USER_ROLES.ADMIN}><Services /></ProtectedRoute>} />
+            <Route path="/admin/services/new" element={<ProtectedRoute requiredRole={USER_ROLES.ADMIN}><ServiceDetail /></ProtectedRoute>} />
+            <Route path="/admin/services/:id" element={<ProtectedRoute requiredRole={USER_ROLES.ADMIN}><ServiceDetail /></ProtectedRoute>} />
+            <Route path="/accesso/login" element={<Login setIsAuthenticated={setIsAuthenticated} setUser={setUser} setUserRole={setUserRole} />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </main>
+      </>
+    )
+  }
+
+  if (userRole === USER_ROLES.USER) {
+    return (
+      <>
+        <Navbar
+          userEmail={localStorage.getItem(LOCAL_STORAGE_KEYS.USER_EMAIL) || ''}
+          onLogout={signOut}
+        />
+        <main className="pt-14 min-h-screen bg-gray-100">
+          <ToastContainer />
+          <Routes>
+            <Route path="/dashboard" element={<ProtectedRoute requiredRole={USER_ROLES.USER}><Dashboard /></ProtectedRoute>} />
+            <Route path="/orders/new" element={<ProtectedRoute requiredRole={USER_ROLES.USER}><NewOrder /></ProtectedRoute>} />
+            <Route path="/accesso/login" element={<Login setIsAuthenticated={setIsAuthenticated} setUser={setUser} setUserRole={setUserRole} />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </main>
+      </>
+    )
+  }
+
+  // Fallback: autenticato ma senza gruppo valido
   return (
     <>
-      <Navbar
-        userEmail={localStorage.getItem(LOCAL_STORAGE_KEYS.USER_EMAIL) || ''}
-        onLogout={signOut}
-      />
-      <main className="pt-14 min-h-screen bg-gray-100">
-        <ToastContainer />
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/orders/new" element={<NewOrder />} />
-          <Route path="/accesso/login" element={<Login setIsAuthenticated={setIsAuthenticated} setUser={setUser} />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </main>
+      <ToastContainer />
+      <Routes>
+        <Route path="/accesso/login" element={<Login setIsAuthenticated={setIsAuthenticated} setUser={setUser} setUserRole={setUserRole} />} />
+        <Route path="*" element={<Login setIsAuthenticated={setIsAuthenticated} setUser={setUser} setUserRole={setUserRole} />} />
+      </Routes>
     </>
   )
 }
@@ -208,4 +246,4 @@ const App: React.FC = () => {
   )
 }
 
-export default App 
+export default App

@@ -13,8 +13,7 @@
     "version:major": "node scripts/version-bump.js major",
     "patch": "npm run version:patch",
     "minor": "npm run version:minor",
-    "major": "npm run version:major",
-
+    "major": "npm run version:major"
   },
   "dependencies": {
     "@aws-sdk/client-cognito-identity": "^3.921.0",

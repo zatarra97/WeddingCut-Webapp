@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import logoOrizzontale from "../../Images/horizzontal.png"
 import Input from "../../Components/Input"
 import AuthLayout from "../../Components/AuthLayout"
-import { LOCAL_STORAGE_KEYS } from "../../constants"
+import { LOCAL_STORAGE_KEYS, VALID_COGNITO_GROUPS, GROUP_TO_ROLE_MAP, DEFAULT_ROUTE_BY_ROLE } from "../../constants"
 import "./Auth.css"
 import {
 	loginSchema,
@@ -23,6 +23,7 @@ import {
 interface LoginPageProps {
 	setIsAuthenticated: (value: boolean) => void
 	setUser: (user: CognitoUser) => void
+	setUserRole: (role: string | null) => void
 }
 
 interface LoginFormProps {
@@ -57,7 +58,7 @@ interface ResetUserData {
 
 type LoginView = "login" | "reset" | "forgotPassword" | "confirmCode"
 
-const LoginPage: React.FC<LoginPageProps> = ({ setIsAuthenticated, setUser }) => {
+const LoginPage: React.FC<LoginPageProps> = ({ setIsAuthenticated, setUser, setUserRole }) => {
 	const navigate = useNavigate()
 	const location = useLocation()
 	const searchParams = new URLSearchParams(location.search)
@@ -103,9 +104,19 @@ const LoginPage: React.FC<LoginPageProps> = ({ setIsAuthenticated, setUser }) =>
 			localStorage.setItem(LOCAL_STORAGE_KEYS.ACCESS_TOKEN, accessToken)
 			localStorage.setItem(LOCAL_STORAGE_KEYS.USER_EMAIL, username)
 
+			const payload = JSON.parse(atob(idToken.split('.')[1]))
+			const groups: string[] = payload['cognito:groups'] ?? []
+			const group = groups.find(g => (VALID_COGNITO_GROUPS as readonly string[]).includes(g))
+			const role = group ? GROUP_TO_ROLE_MAP[group] : null
+			if (role) {
+				localStorage.setItem(LOCAL_STORAGE_KEYS.USER_ROLE, role)
+				setUserRole(role)
+			}
+
 			setIsAuthenticated(true)
 			setUser(cognitoUser)
-			navigate(returnUrl || "/")
+			const defaultRoute = role ? (DEFAULT_ROUTE_BY_ROLE[role] ?? '/dashboard') : '/dashboard'
+			navigate(returnUrl && returnUrl !== '/' ? returnUrl : defaultRoute)
 			localStorage.removeItem(LOCAL_STORAGE_KEYS.RETURN_URL)
 		} catch (err: unknown) {
 			const error = err as { name?: string; message?: string }
