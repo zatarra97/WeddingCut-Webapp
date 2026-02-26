@@ -42,11 +42,15 @@ const ServiceDetail = () => {
 		handleSubmit,
 		control,
 		reset,
+		watch,
+		setValue,
 		formState: { errors },
 	} = useForm<ServiceFormData>({
 		resolver: zodResolver(serviceSchema),
 		defaultValues: DEFAULT_VALUES,
 	})
+
+	const orientation = watch('orientation')
 
 	useEffect(() => {
 		if (!isEdit) return
@@ -155,7 +159,17 @@ const ServiceDetail = () => {
 										label="Orientamento *"
 										name="orientation"
 										value={field.value}
-										onChange={(e) => field.onChange(e.target.value)}
+										onChange={(e) => {
+											const val = e.target.value as 'vertical' | 'horizontal' | 'both'
+											field.onChange(val)
+											if (val === 'vertical') {
+												setValue('priceHorizontal', null)
+												setValue('priceBoth', null)
+											} else if (val === 'horizontal') {
+												setValue('priceVertical', null)
+												setValue('priceBoth', null)
+											}
+										}}
 										options={ORIENTATION_OPTIONS}
 										error={errors.orientation ? { message: errors.orientation.message ?? '' } : undefined}
 										placeholder="Seleziona orientamento"
@@ -194,34 +208,46 @@ const ServiceDetail = () => {
 						</div>
 					</FormSection>
 
-					{/* Sezione: Prezzi */}
+					{/* Sezione: Prezzi — condizionale in base all'orientamento */}
 					<FormSection title="Prezzi">
-						<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-							<Input
-								label="Prezzo verticale (€)"
-								name="priceVertical"
-								type="number"
-								step="0.01"
-								{...register('priceVertical')}
-								error={errors.priceVertical as any}
-							/>
-							<Input
-								label="Prezzo orizzontale (€)"
-								name="priceHorizontal"
-								type="number"
-								step="0.01"
-								{...register('priceHorizontal')}
-								error={errors.priceHorizontal as any}
-							/>
-							<Input
-								label="Prezzo entrambi (€)"
-								name="priceBoth"
-								type="number"
-								step="0.01"
-								{...register('priceBoth')}
-								error={errors.priceBoth as any}
-							/>
+						<div className={`grid gap-4 ${orientation === 'both' ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'}`}>
+							{(orientation === 'vertical' || orientation === 'both') && (
+								<Input
+									label={`Prezzo verticale (€)${orientation === 'both' ? '' : ' *'}`}
+									name="priceVertical"
+									type="number"
+									step="0.01"
+									{...register('priceVertical')}
+									error={errors.priceVertical as any}
+								/>
+							)}
+							{(orientation === 'horizontal' || orientation === 'both') && (
+								<Input
+									label={`Prezzo orizzontale (€)${orientation === 'both' ? '' : ' *'}`}
+									name="priceHorizontal"
+									type="number"
+									step="0.01"
+									{...register('priceHorizontal')}
+									error={errors.priceHorizontal as any}
+								/>
+							)}
+							{orientation === 'both' && (
+								<Input
+									label="Prezzo entrambi (€)"
+									name="priceBoth"
+									type="number"
+									step="0.01"
+									{...register('priceBoth')}
+									error={errors.priceBoth as any}
+									placeholder="Es. prezzo bundle vantaggioso"
+								/>
+							)}
 						</div>
+						{orientation === 'both' && (
+							<p className="text-xs text-gray-500 mt-2">
+								Il prezzo "Entrambi" può essere inferiore alla somma dei singoli — il risparmio verrà evidenziato automaticamente all'utente.
+							</p>
+						)}
 					</FormSection>
 
 					{/* Sezione: Opzioni aggiuntive */}

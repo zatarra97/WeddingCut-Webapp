@@ -184,6 +184,7 @@ const AppContent: React.FC = () => {
         <Navbar
           userEmail={localStorage.getItem(LOCAL_STORAGE_KEYS.USER_EMAIL) || ''}
           onLogout={signOut}
+          homeRoute="/admin"
         />
         <main className="pt-14 min-h-screen bg-gray-100">
           <ToastContainer />
@@ -206,12 +207,13 @@ const AppContent: React.FC = () => {
         <Navbar
           userEmail={localStorage.getItem(LOCAL_STORAGE_KEYS.USER_EMAIL) || ''}
           onLogout={signOut}
+          homeRoute="/user/dashboard"
         />
         <main className="pt-14 min-h-screen bg-gray-100">
           <ToastContainer />
           <Routes>
-            <Route path="/dashboard" element={<ProtectedRoute requiredRole={USER_ROLES.USER}><Dashboard /></ProtectedRoute>} />
-            <Route path="/orders/new" element={<ProtectedRoute requiredRole={USER_ROLES.USER}><NewOrder /></ProtectedRoute>} />
+            <Route path="/user/dashboard" element={<ProtectedRoute requiredRole={USER_ROLES.USER}><Dashboard /></ProtectedRoute>} />
+            <Route path="/user/orders/new" element={<ProtectedRoute requiredRole={USER_ROLES.USER}><NewOrder /></ProtectedRoute>} />
             <Route path="/accesso/login" element={<Login setIsAuthenticated={setIsAuthenticated} setUser={setUser} setUserRole={setUserRole} />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

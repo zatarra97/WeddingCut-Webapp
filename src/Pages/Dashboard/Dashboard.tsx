@@ -143,7 +143,7 @@ const Dashboard = () => {
 
 					{/* Add project link */}
 					<Link
-						to="/orders/new"
+						to="/user/orders/new"
 						className="w-full flex items-center justify-center gap-2 p-5 rounded-xl border-2 border-dashed border-purple-300 text-purple-700 font-medium hover:bg-purple-50 hover:border-purple-400 transition-colors"
 					>
 						<i className="fa-solid fa-plus" aria-hidden />

@@ -22,7 +22,7 @@ export const GROUP_TO_ROLE_MAP: Record<string, string> = {
 // Route di default per ruolo
 export const DEFAULT_ROUTE_BY_ROLE: Record<string, string> = {
   [USER_ROLES.ADMIN]: '/admin',
-  [USER_ROLES.USER]: '/dashboard',
+  [USER_ROLES.USER]: '/user/dashboard',
 };
 
 // Chiavi per localStorage
