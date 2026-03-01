@@ -108,7 +108,7 @@ const AdminMessageDetail = () => {
 
 	if (loading) {
 		return (
-			<div className="min-h-[calc(100vh-64px)] flex items-center justify-center">
+			<div className="min-h-full flex items-center justify-center">
 				<div className="text-center">
 					<div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600 mx-auto mb-3" />
 					<p className="text-gray-500 text-sm">Caricamento messaggi…</p>
@@ -120,7 +120,7 @@ const AdminMessageDetail = () => {
 	const isClosed = conv?.status === "closed"
 
 	return (
-		<div className="flex flex-col h-[calc(100vh-64px)] bg-gray-100">
+		<div className="flex flex-col h-full bg-gray-100">
 			{/* Header */}
 			<div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3 shrink-0">
 				<button

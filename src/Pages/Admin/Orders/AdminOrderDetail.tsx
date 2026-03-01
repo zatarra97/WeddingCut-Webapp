@@ -4,6 +4,12 @@ import { toast } from "react-toastify"
 import { genericGet, genericPatch, genericDelete } from "../../../services/api-utility"
 import DeleteModal from "../../../Components/DeleteModal"
 
+interface ServiceInfo {
+	publicId: string
+	name: string
+	durationDescription?: string
+}
+
 interface SelectedService {
 	publicId: string
 	orientation: "vertical" | "horizontal" | "both"
@@ -84,6 +90,9 @@ const AdminOrderDetail = () => {
 	const [deliveryLink, setDeliveryLink] = useState("")
 	const [saving, setSaving] = useState(false)
 
+	// Mappa publicId → servizio per la visualizzazione dei nomi
+	const [serviceMap, setServiceMap] = useState<Record<string, ServiceInfo>>({})
+
 	// Delete modal
 	const [deleteOpen, setDeleteOpen] = useState(false)
 	const [deleting, setDeleting] = useState(false)
@@ -102,6 +111,14 @@ const AdminOrderDetail = () => {
 				navigate("/admin/orders")
 			})
 			.finally(() => setLoading(false))
+		// Fetch catalogo servizi in parallelo (non bloccante)
+		genericGet("services")
+			.then((data: ServiceInfo[]) => {
+				const map: Record<string, ServiceInfo> = {}
+				data.forEach((s) => { if (s.publicId) map[s.publicId] = s })
+				setServiceMap(map)
+			})
+			.catch(() => {})
 	}, [publicId])
 
 	const handleSave = async () => {
@@ -138,7 +155,7 @@ const AdminOrderDetail = () => {
 
 	if (loading) {
 		return (
-			<div className="min-h-[calc(100vh-64px)] flex items-center justify-center">
+			<div className="min-h-full flex items-center justify-center">
 				<div className="text-center">
 					<div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600 mx-auto mb-3" />
 					<p className="text-gray-500 text-sm">Caricamento ordine…</p>
@@ -150,19 +167,20 @@ const AdminOrderDetail = () => {
 	if (!order) return null
 
 	return (
-		<div className="min-h-[calc(100vh-64px)]">
-			<nav className="sticky top-14 z-40 h-12 bg-gray-800 text-white shadow-sm">
-				<div className="container mx-auto flex items-center gap-2 px-4 md:px-6 pt-3">
-					<button onClick={() => navigate("/admin/orders")} className="text-sm text-gray-300 hover:text-white transition-colors cursor-pointer flex items-center gap-1.5">
+		<div className="min-h-full">
+			<div className="container mx-auto p-4 md:p-6 max-w-5xl">
+				{/* Breadcrumb */}
+				<div className="flex items-center gap-2 mb-5 text-sm">
+					<button
+						onClick={() => navigate("/admin/orders")}
+						className="text-violet-600 hover:text-violet-800 transition-colors cursor-pointer flex items-center gap-1.5 font-medium"
+					>
 						<i className="fa-solid fa-arrow-left text-xs" />
 						Ordini
 					</button>
-					<span className="text-gray-500">/</span>
-					<span className="text-sm font-medium truncate">{order.coupleName}</span>
+					<i className="fa-solid fa-chevron-right text-xs text-gray-400" />
+					<span className="text-gray-600 truncate">{order.coupleName}</span>
 				</div>
-			</nav>
-
-			<div className="container mx-auto p-4 md:p-6 max-w-5xl">
 				<div className="flex flex-col lg:flex-row gap-6">
 
 					{/* ── Colonna sinistra: dati ordine ── */}
@@ -185,36 +203,71 @@ const AdminOrderDetail = () => {
 							<h2 className="text-base font-semibold text-gray-800 mb-4">Servizi selezionati</h2>
 							{Array.isArray(order.selectedServices) && order.selectedServices.length > 0 ? (
 								<div className="space-y-3">
-									{order.selectedServices.map((s: SelectedService, i: number) => (
-										<div key={i} className="py-2 border-b border-gray-100 last:border-0">
-											<div className="flex flex-wrap items-center gap-2">
-												<span className="text-xs font-mono bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{s.publicId}</span>
-												<span className="text-xs text-gray-500">{ORIENTATION_LABELS[s.orientation] ?? s.orientation}</span>
-												{s.duration != null && <span className="text-xs text-gray-500">{s.duration} min</span>}
+									{order.selectedServices.map((s: SelectedService, i: number) => {
+										const svc = serviceMap[s.publicId]
+										return (
+											<div key={i} className="rounded-lg border border-gray-200 bg-gray-50/50 p-4">
+												{/* Nome servizio + orientamento */}
+												<div className="flex items-start justify-between gap-3">
+													<p className="font-semibold text-gray-900 text-sm leading-snug">
+														{svc?.name ?? (
+															<span className="font-mono text-xs text-gray-400">{s.publicId}</span>
+														)}
+													</p>
+													<span className="shrink-0 inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full bg-violet-100 text-violet-700">
+														{ORIENTATION_LABELS[s.orientation] ?? s.orientation}
+													</span>
+												</div>
+
+												{/* Durata */}
+												{s.duration != null && (
+													<div className="flex items-center gap-1.5 mt-2 text-sm text-gray-600">
+														<i className="fa-regular fa-clock text-gray-400 text-xs" aria-hidden />
+														<span>
+															{s.duration} min
+															{svc?.durationDescription && (
+																<span className="text-gray-400 ml-1.5 text-xs">
+																	({svc.durationDescription})
+																</span>
+															)}
+														</span>
+													</div>
+												)}
+
+												{/* Note dell'utente */}
+												{s.notes && (
+													<div className="mt-3 rounded-md border border-gray-200 bg-white px-3 py-2">
+														<p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-0.5">
+															Note
+														</p>
+														<p className="text-sm text-gray-700 whitespace-pre-wrap">{s.notes}</p>
+													</div>
+												)}
 											</div>
-											{s.notes && <p className="text-xs text-gray-500 italic mt-1">{s.notes}</p>}
-										</div>
-									))}
-									<div className="flex justify-between items-center pt-2 text-sm font-semibold">
+										)
+									})}
+
+									{/* Riepilogo prezzi */}
+									<div className="pt-1 space-y-1.5 border-t border-gray-100 mt-1">
 										{order.servicesTotal != null && (
-											<>
-												<span className="text-gray-500">Totale servizi</span>
-												<span className="text-gray-700">€{Number(order.servicesTotal).toFixed(2)}</span>
-											</>
+											<div className="flex justify-between items-center text-sm">
+												<span className="text-gray-500">Subtotale servizi</span>
+												<span className="text-gray-700 font-medium">€{Number(order.servicesTotal).toFixed(2)}</span>
+											</div>
+										)}
+										{order.cameraSurcharge > 0 && (
+											<div className="flex justify-between items-center text-sm">
+												<span className="text-gray-500">Supplemento multi-camera</span>
+												<span className="text-orange-600 font-medium">+€{Number(order.cameraSurcharge).toFixed(2)}</span>
+											</div>
+										)}
+										{order.totalPrice != null && (
+											<div className="flex justify-between items-center text-sm font-bold border-t border-gray-200 pt-2 mt-1">
+												<span className="text-gray-800">Totale</span>
+												<span className="text-violet-700">€{Number(order.totalPrice).toFixed(2)}</span>
+											</div>
 										)}
 									</div>
-									{order.cameraSurcharge > 0 && (
-										<div className="flex justify-between items-center text-sm">
-											<span className="text-gray-500">Supplemento multi-camera</span>
-											<span className="text-orange-600">+€{Number(order.cameraSurcharge).toFixed(2)}</span>
-										</div>
-									)}
-									{order.totalPrice != null && (
-										<div className="flex justify-between items-center text-sm font-bold border-t border-gray-200 pt-2">
-											<span className="text-gray-800">Totale</span>
-											<span className="text-purple-700">€{Number(order.totalPrice).toFixed(2)}</span>
-										</div>
-									)}
 								</div>
 							) : (
 								<p className="text-sm text-gray-400 italic">Nessun servizio</p>

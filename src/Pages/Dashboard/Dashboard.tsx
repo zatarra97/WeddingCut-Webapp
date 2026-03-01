@@ -35,7 +35,7 @@ const Dashboard = () => {
 	return (
 		<div className="min-h-[calc(100vh-64px)]">
 			{/* Tab bar */}
-			<nav className="sticky top-14 z-40 h-12 bg-purple-600 text-white shadow-sm">
+			<nav className="sticky top-26 z-30 h-12 bg-purple-600 text-white shadow-sm">
 				<div className="container mx-auto flex items-center gap-1 px-4 md:px-6 pt-2">
 				{TABS.map((tab) => (
 					<button

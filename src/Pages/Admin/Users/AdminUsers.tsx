@@ -59,13 +59,7 @@ const AdminUsers = () => {
 	}
 
 	return (
-		<div className="min-h-[calc(100vh-64px)]">
-			<nav className="sticky top-14 z-40 h-12 bg-gray-800 text-white shadow-sm">
-				<div className="container mx-auto flex items-center px-4 md:px-6 pt-3">
-					<span className="text-sm font-medium">Gestione utenti</span>
-				</div>
-			</nav>
-
+		<div className="min-h-full">
 			<div className="container mx-auto p-4 md:p-6">
 				<h1 className="text-2xl font-bold text-gray-800 mb-6">Utenti</h1>
 

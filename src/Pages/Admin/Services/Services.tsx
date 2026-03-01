@@ -139,7 +139,7 @@ const Services = () => {
 	]
 
 	return (
-		<div className="min-h-[calc(100vh-64px)]">
+		<div className="min-h-full">
 			<PageHeader
 				icon="fa-solid fa-film"
 				title="Servizi"

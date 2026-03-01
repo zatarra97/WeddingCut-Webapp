@@ -43,18 +43,7 @@ const AdminMessageList = () => {
 	const totalUnread = conversations.reduce((s, c) => s + c.unreadCount, 0)
 
 	return (
-		<div className="min-h-[calc(100vh-64px)]">
-			<nav className="sticky top-14 z-40 h-12 bg-gray-800 text-white shadow-sm">
-				<div className="container mx-auto flex items-center gap-3 px-4 md:px-6 pt-3">
-					<span className="text-sm font-medium">Messaggi</span>
-					{totalUnread > 0 && (
-						<span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-red-500 text-white text-xs font-bold">
-							{totalUnread}
-						</span>
-					)}
-				</div>
-			</nav>
-
+		<div className="min-h-full">
 			<div className="container mx-auto p-4 md:p-6 max-w-3xl">
 				<h1 className="text-2xl font-bold text-gray-800 mb-6">Conversazioni</h1>
 

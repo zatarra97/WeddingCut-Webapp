@@ -116,7 +116,7 @@ const ServiceDetail = () => {
 
 	if (pageLoading) {
 		return (
-			<div className="min-h-[calc(100vh-64px)] flex items-center justify-center">
+			<div className="min-h-full flex items-center justify-center">
 				<div className="text-center">
 					<div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto mb-3"></div>
 					<p className="text-gray-500 text-sm">Caricamento servizio…</p>
@@ -126,7 +126,7 @@ const ServiceDetail = () => {
 	}
 
 	return (
-		<div className="min-h-[calc(100vh-64px)]">
+		<div className="min-h-full">
 			<PageHeader
 				icon={isEdit ? 'fa-solid fa-pen' : 'fa-solid fa-plus'}
 				title={isEdit ? 'Modifica servizio' : 'Nuovo servizio'}

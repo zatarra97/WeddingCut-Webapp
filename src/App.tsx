@@ -23,6 +23,8 @@ import NotFound from './Pages/NotFound/NotFound'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import Navbar from './Components/Navbar'
+import UserNav from './Components/UserNav'
+import AdminLayout from './Components/AdminLayout'
 import ProtectedRoute from './Components/ProtectedRoute'
 import { ThemeConfig } from "flowbite-react";
 import { ThemeInit } from "../.flowbite-react/init";
@@ -189,13 +191,11 @@ const AppContent: React.FC = () => {
   if (userRole === USER_ROLES.ADMIN) {
     return (
       <>
-        <Navbar
+        <ToastContainer />
+        <AdminLayout
           userEmail={localStorage.getItem(LOCAL_STORAGE_KEYS.USER_EMAIL) || ''}
           onLogout={signOut}
-          homeRoute="/admin"
-        />
-        <main className="pt-14 min-h-screen bg-gray-100">
-          <ToastContainer />
+        >
           <Routes>
             <Route path="/admin" element={<ProtectedRoute requiredRole={USER_ROLES.ADMIN}><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/services" element={<ProtectedRoute requiredRole={USER_ROLES.ADMIN}><Services /></ProtectedRoute>} />
@@ -209,7 +209,7 @@ const AppContent: React.FC = () => {
             <Route path="/accesso/login" element={<Login setIsAuthenticated={setIsAuthenticated} setUser={setUser} setUserRole={setUserRole} />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </main>
+        </AdminLayout>
       </>
     )
   }
@@ -222,7 +222,8 @@ const AppContent: React.FC = () => {
           onLogout={signOut}
           homeRoute="/user/dashboard"
         />
-        <main className="pt-14 min-h-screen bg-gray-100">
+        <UserNav />
+        <main className="pt-26 min-h-screen bg-gray-100">
           <ToastContainer />
           <Routes>
             <Route path="/user/dashboard" element={<ProtectedRoute requiredRole={USER_ROLES.USER}><Dashboard /></ProtectedRoute>} />
