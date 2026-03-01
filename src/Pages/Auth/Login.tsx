@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import logoOrizzontale from "../../Images/horizzontal.png"
 import Input from "../../Components/Input"
 import AuthLayout from "../../Components/AuthLayout"
-import { LOCAL_STORAGE_KEYS, VALID_COGNITO_GROUPS, GROUP_TO_ROLE_MAP, DEFAULT_ROUTE_BY_ROLE } from "../../constants"
+import { LOCAL_STORAGE_KEYS, DEFAULT_ROUTE_BY_ROLE, resolveRole } from "../../constants"
 import "./Auth.css"
 import {
 	loginSchema,
@@ -106,16 +106,13 @@ const LoginPage: React.FC<LoginPageProps> = ({ setIsAuthenticated, setUser, setU
 
 			const payload = JSON.parse(atob(idToken.split('.')[1]))
 			const groups: string[] = payload['cognito:groups'] ?? []
-			const group = groups.find(g => (VALID_COGNITO_GROUPS as readonly string[]).includes(g))
-			const role = group ? GROUP_TO_ROLE_MAP[group] : null
-			if (role) {
-				localStorage.setItem(LOCAL_STORAGE_KEYS.USER_ROLE, role)
-				setUserRole(role)
-			}
+			const role = resolveRole(groups)
+			localStorage.setItem(LOCAL_STORAGE_KEYS.USER_ROLE, role)
+			setUserRole(role)
 
 			setIsAuthenticated(true)
 			setUser(cognitoUser)
-			const defaultRoute = role ? (DEFAULT_ROUTE_BY_ROLE[role] ?? '/dashboard') : '/dashboard'
+			const defaultRoute = DEFAULT_ROUTE_BY_ROLE[role] ?? '/user/dashboard'
 			navigate(returnUrl && returnUrl !== '/' ? returnUrl : defaultRoute)
 			localStorage.removeItem(LOCAL_STORAGE_KEYS.RETURN_URL)
 		} catch (err: unknown) {

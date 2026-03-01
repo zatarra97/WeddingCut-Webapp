@@ -1,23 +1,19 @@
 // Gruppi Cognito
 export const COGNITO_GROUPS = {
   ADMIN: 'Admin',
-  USER: 'User',
 } as const;
 
-// Ruoli utente mappati
+// Ruoli utente
 export const USER_ROLES = {
   ADMIN: 'Admin',
   USER: 'User',
 } as const;
 
-// Array di tutti i gruppi validi per controlli
-export const VALID_COGNITO_GROUPS = Object.values(COGNITO_GROUPS);
-
-// Mapping da gruppo Cognito a ruolo utente
-export const GROUP_TO_ROLE_MAP: Record<string, string> = {
-  [COGNITO_GROUPS.ADMIN]: USER_ROLES.ADMIN,
-  [COGNITO_GROUPS.USER]: USER_ROLES.USER,
-};
+// Determina il ruolo dai gruppi Cognito del JWT.
+// Nessun gruppo (utente normale) → User. Gruppo Admin → Admin.
+export function resolveRole(groups: string[]): string {
+  return groups.includes(COGNITO_GROUPS.ADMIN) ? USER_ROLES.ADMIN : USER_ROLES.USER;
+}
 
 // Route di default per ruolo
 export const DEFAULT_ROUTE_BY_ROLE: Record<string, string> = {

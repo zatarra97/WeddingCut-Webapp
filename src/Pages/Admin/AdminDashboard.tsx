@@ -8,6 +8,27 @@ const NAV_CARDS = [
 		description: 'Gestisci i servizi di montaggio disponibili',
 		color: 'bg-purple-600',
 	},
+	{
+		to: '/admin/orders',
+		icon: 'fa-solid fa-clipboard-list',
+		label: 'Ordini',
+		description: 'Visualizza e gestisci gli ordini ricevuti',
+		color: 'bg-blue-600',
+	},
+	{
+		to: '/admin/messages',
+		icon: 'fa-solid fa-comments',
+		label: 'Messaggi',
+		description: 'Leggi e rispondi alle conversazioni degli utenti',
+		color: 'bg-green-600',
+	},
+	{
+		to: '/admin/users',
+		icon: 'fa-solid fa-users',
+		label: 'Utenti',
+		description: 'Visualizza e gestisci gli account utente',
+		color: 'bg-orange-600',
+	},
 ]
 
 const AdminDashboard = () => {

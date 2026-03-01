@@ -5,7 +5,7 @@ import {
   CognitoUserAttribute,
   ISignUpResult
 } from 'amazon-cognito-identity-js';
-import { VALID_COGNITO_GROUPS, GROUP_TO_ROLE_MAP, LOCAL_STORAGE_KEYS } from '../constants';
+import { LOCAL_STORAGE_KEYS } from '../constants';
 
 const poolData = {
   UserPoolId: import.meta.env.VITE_COGNITO_USER_POOL_ID,
@@ -77,7 +77,7 @@ class CognitoService {
 
     return new Promise((resolve, reject) => {
       cognitoUser.authenticateUser(authenticationDetails, {
-        onSuccess: (result) => {
+        onSuccess: () => {
           resolve(cognitoUser);
         },
         onFailure: (err) => {
@@ -158,20 +158,7 @@ class CognitoService {
     }
   }
 
-  // Metodo per verificare se l'utente ha un ruolo valido
-  hasValidRole(cognitoGroups: string[]): boolean {
-    return cognitoGroups.some(group => VALID_COGNITO_GROUPS.includes(group as any));
-  }
 
-  // Metodo per determinare il ruolo dell'utente
-  getUserRole(cognitoGroups: string[]): string | null {
-    for (const group of cognitoGroups) {
-      if (group in GROUP_TO_ROLE_MAP) {
-        return GROUP_TO_ROLE_MAP[group as keyof typeof GROUP_TO_ROLE_MAP];
-      }
-    }
-    return null;
-  }
 }
 
 export const cognitoService = new CognitoService(); 

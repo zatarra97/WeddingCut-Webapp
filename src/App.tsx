@@ -7,6 +7,15 @@ import AdminDashboard from './Pages/Admin/AdminDashboard'
 import Services from './Pages/Admin/Services/Services'
 import ServiceDetail from './Pages/Admin/Services/ServiceDetail'
 import NewOrder from './Pages/Orders/NewOrder'
+import OrderList from './Pages/Orders/OrderList'
+import OrderDetail from './Pages/Orders/OrderDetail'
+import AdminOrders from './Pages/Admin/Orders/AdminOrders'
+import AdminOrderDetail from './Pages/Admin/Orders/AdminOrderDetail'
+import AdminMessageList from './Pages/Admin/Messages/AdminMessageList'
+import AdminMessageDetail from './Pages/Admin/Messages/AdminMessageDetail'
+import AdminUsers from './Pages/Admin/Users/AdminUsers'
+import MessageList from './Pages/Messages/MessageList'
+import MessageDetail from './Pages/Messages/MessageDetail'
 import Login from './Pages/Auth/Login'
 import Register from './Pages/Auth/Register'
 import './App.css'
@@ -18,7 +27,7 @@ import ProtectedRoute from './Components/ProtectedRoute'
 import { ThemeConfig } from "flowbite-react";
 import { ThemeInit } from "../.flowbite-react/init";
 
-import { LOCAL_STORAGE_KEYS, VALID_COGNITO_GROUPS, GROUP_TO_ROLE_MAP, USER_ROLES } from './constants'
+import { LOCAL_STORAGE_KEYS, USER_ROLES, resolveRole, DEFAULT_ROUTE_BY_ROLE } from './constants'
 import { ping } from './services/api-utility'
 
 
@@ -112,8 +121,7 @@ const AppContent: React.FC = () => {
         const payload = JSON.parse(atob(idToken.split('.')[1]))
         const email = payload.email || payload['cognito:username'] || ''
         const groups: string[] = payload['cognito:groups'] ?? []
-        const group = groups.find(g => (VALID_COGNITO_GROUPS as readonly string[]).includes(g))
-        const role = group ? GROUP_TO_ROLE_MAP[group] : null
+        const role = resolveRole(groups)
         setIsAuthenticated(true)
         setUser(cognitoUser)
         setUserRole(role)
@@ -121,7 +129,7 @@ const AppContent: React.FC = () => {
         localStorage.setItem(LOCAL_STORAGE_KEYS.ID_TOKEN, idToken)
         localStorage.setItem(LOCAL_STORAGE_KEYS.ACCESS_TOKEN, session.getAccessToken().getJwtToken())
         if (email) localStorage.setItem(LOCAL_STORAGE_KEYS.USER_EMAIL, email)
-        if (role) localStorage.setItem(LOCAL_STORAGE_KEYS.USER_ROLE, role)
+        localStorage.setItem(LOCAL_STORAGE_KEYS.USER_ROLE, role)
       } else {
         setIsAuthenticated(false)
         setUser(null)
@@ -193,6 +201,11 @@ const AppContent: React.FC = () => {
             <Route path="/admin/services" element={<ProtectedRoute requiredRole={USER_ROLES.ADMIN}><Services /></ProtectedRoute>} />
             <Route path="/admin/services/new" element={<ProtectedRoute requiredRole={USER_ROLES.ADMIN}><ServiceDetail /></ProtectedRoute>} />
             <Route path="/admin/services/:id" element={<ProtectedRoute requiredRole={USER_ROLES.ADMIN}><ServiceDetail /></ProtectedRoute>} />
+            <Route path="/admin/orders" element={<ProtectedRoute requiredRole={USER_ROLES.ADMIN}><AdminOrders /></ProtectedRoute>} />
+            <Route path="/admin/orders/:publicId" element={<ProtectedRoute requiredRole={USER_ROLES.ADMIN}><AdminOrderDetail /></ProtectedRoute>} />
+            <Route path="/admin/messages" element={<ProtectedRoute requiredRole={USER_ROLES.ADMIN}><AdminMessageList /></ProtectedRoute>} />
+            <Route path="/admin/messages/:publicId" element={<ProtectedRoute requiredRole={USER_ROLES.ADMIN}><AdminMessageDetail /></ProtectedRoute>} />
+            <Route path="/admin/users" element={<ProtectedRoute requiredRole={USER_ROLES.ADMIN}><AdminUsers /></ProtectedRoute>} />
             <Route path="/accesso/login" element={<Login setIsAuthenticated={setIsAuthenticated} setUser={setUser} setUserRole={setUserRole} />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
@@ -213,7 +226,11 @@ const AppContent: React.FC = () => {
           <ToastContainer />
           <Routes>
             <Route path="/user/dashboard" element={<ProtectedRoute requiredRole={USER_ROLES.USER}><Dashboard /></ProtectedRoute>} />
+            <Route path="/user/orders" element={<ProtectedRoute requiredRole={USER_ROLES.USER}><OrderList /></ProtectedRoute>} />
             <Route path="/user/orders/new" element={<ProtectedRoute requiredRole={USER_ROLES.USER}><NewOrder /></ProtectedRoute>} />
+            <Route path="/user/orders/:publicId" element={<ProtectedRoute requiredRole={USER_ROLES.USER}><OrderDetail /></ProtectedRoute>} />
+            <Route path="/user/messages" element={<ProtectedRoute requiredRole={USER_ROLES.USER}><MessageList /></ProtectedRoute>} />
+            <Route path="/user/messages/:publicId" element={<ProtectedRoute requiredRole={USER_ROLES.USER}><MessageDetail /></ProtectedRoute>} />
             <Route path="/accesso/login" element={<Login setIsAuthenticated={setIsAuthenticated} setUser={setUser} setUserRole={setUserRole} />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
@@ -222,16 +239,7 @@ const AppContent: React.FC = () => {
     )
   }
 
-  // Fallback: autenticato ma senza gruppo valido
-  return (
-    <>
-      <ToastContainer />
-      <Routes>
-        <Route path="/accesso/login" element={<Login setIsAuthenticated={setIsAuthenticated} setUser={setUser} setUserRole={setUserRole} />} />
-        <Route path="*" element={<Login setIsAuthenticated={setIsAuthenticated} setUser={setUser} setUserRole={setUserRole} />} />
-      </Routes>
-    </>
-  )
+  return null
 }
 
 const App: React.FC = () => {

@@ -5,7 +5,7 @@ import Input from "../../Components/Input"
 import Textarea from "../../Components/Textarea"
 import Select from "../../Components/Select"
 import DateTimePicker from "../../Components/DateTimePicker"
-import { genericGet } from "../../services/api-utility"
+import { genericGet, genericPost } from "../../services/api-utility"
 
 // ─── Tipi ────────────────────────────────────────────────────────────────────
 
@@ -194,7 +194,6 @@ const NewOrder = () => {
 
 		setSubmitting(true)
 		try {
-			// TODO: POST /user/orders quando il controller sarà pronto
 			const payload = {
 				coupleName: coupleNames.trim(),
 				weddingDate,
@@ -205,16 +204,17 @@ const NewOrder = () => {
 				generalNotes: generalNotes.trim() || null,
 				referenceVideo: referenceVideo.trim() || null,
 				cameraCount,
-				exportSettings: {
-					fps:        exportFps,
-					bitrate:    exportBitrate,
-					aspect:     exportAspect,
-					resolution: exportResolution,
-				},
+				exportFps: exportFps || null,
+				exportBitrate: exportBitrate || null,
+				exportAspect: exportAspect || null,
+				exportResolution: exportResolution || null,
+				servicesTotal: hasUnpricedServices ? null : servicesTotal,
+				cameraSurcharge,
+				totalPrice: hasUnpricedServices ? null : totalPrice,
 			}
-			console.log("Order payload:", payload)
+			await genericPost("user/orders", payload)
 			toast.success("Ordine inviato con successo!")
-			navigate("/user/dashboard")
+			navigate("/user/orders")
 		} catch {
 			toast.error("Errore durante l'invio dell'ordine")
 		} finally {
