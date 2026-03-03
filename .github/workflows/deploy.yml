@@ -48,10 +48,11 @@ jobs:
                       echo "✓ main.tsx correctly processed by Vite"
                   fi
               env:
-                  GITHUB_REPOSITORY: ${{ github.repository }}
                   NODE_ENV: production
-                  VITE_BASE_PATH: /my-rent/
-                  VITE_LOGIN_PASSWORD: ${{ secrets.VITE_LOGIN_PASSWORD }}
+                  VITE_COGNITO_USER_POOL_ID: ${{ secrets.VITE_COGNITO_USER_POOL_ID }}
+                  VITE_COGNITO_CLIENT_ID: ${{ secrets.VITE_COGNITO_CLIENT_ID }}
+                  VITE_AWS_REGION: ${{ secrets.VITE_AWS_REGION }}
+                  VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
 
             - name: Setup Pages
               uses: actions/configure-pages@v4
