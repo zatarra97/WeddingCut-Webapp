@@ -9,6 +9,7 @@ const packageJson = JSON.parse(readFileSync('./package.json', 'utf8'))
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/WeddingCut-Webapp/',
   plugins: [react(), tailwindcss(), flowbiteReact()],
   build: {
     outDir: 'build'
