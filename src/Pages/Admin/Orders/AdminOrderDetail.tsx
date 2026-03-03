@@ -168,7 +168,7 @@ const AdminOrderDetail = () => {
 
 	return (
 		<div className="min-h-full">
-			<div className="container mx-auto p-4 md:p-6 max-w-5xl">
+			<div className="container mx-auto p-4 md:p-6">
 				{/* Breadcrumb */}
 				<div className="flex items-center gap-2 mb-5 text-sm">
 					<button
@@ -192,7 +192,7 @@ const AdminOrderDetail = () => {
 							<InfoRow label="ID" value={order.publicId} />
 							<InfoRow label="Utente" value={order.userEmail} />
 							<InfoRow label="Coppia" value={order.coupleName} />
-							<InfoRow label="Matrimonio" value={order.weddingDate} />
+							<InfoRow label="Matrimonio" value={new Date(order.weddingDate).toLocaleDateString("it-IT")} />
 							<InfoRow label="Telecamere" value={order.cameraCount} />
 							<InfoRow label="Creato il" value={new Date(order.createdAt).toLocaleString("it-IT")} />
 							<InfoRow label="Aggiornato il" value={new Date(order.updatedAt).toLocaleString("it-IT")} />

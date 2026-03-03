@@ -6,7 +6,6 @@ import { toast } from 'react-toastify'
 import Input from '../../../Components/Input'
 import Textarea from '../../../Components/Textarea'
 import Select from '../../../Components/Select'
-import PageHeader from '../../../Components/PageHeader'
 import FormSection from '../../../Components/FormSection'
 import { getItem, createItem, updateItem } from '../../../services/api-utility'
 import { serviceSchema, type ServiceFormData, type Service } from './serviceSchema'
@@ -127,14 +126,38 @@ const ServiceDetail = () => {
 
 	return (
 		<div className="min-h-full">
-			<PageHeader
-				icon={isEdit ? 'fa-solid fa-pen' : 'fa-solid fa-plus'}
-				title={isEdit ? 'Modifica servizio' : 'Nuovo servizio'}
-				backButton={{ route: '/admin/services' }}
-			/>
-
-			<div className="container mx-auto p-4 md:p-6 max-w-3xl">
+			<div className="container mx-auto p-4 md:p-6">
 				<form onSubmit={handleSubmit(onSubmit)} noValidate>
+					<div className="flex items-center gap-4 mb-6">
+						<h1 className="text-2xl font-bold text-gray-800 flex-1">
+							{isEdit ? 'Modifica servizio' : 'Nuovo servizio'}
+						</h1>
+						<button
+							type="button"
+							onClick={() => navigate('/admin/services')}
+							className="btn secondary-wire"
+							disabled={submitting}
+						>
+							Annulla
+						</button>
+						<button
+							type="submit"
+							className="btn primary bg-primary hover:bg-primary-dark"
+							disabled={submitting}
+						>
+							{submitting ? (
+								<>
+									<i className="fa-solid fa-spinner fa-spin mr-2" />
+									Salvataggio…
+								</>
+							) : (
+								<>
+									<i className={`fa-solid ${isEdit ? 'fa-floppy-disk' : 'fa-plus'} mr-2`} />
+									{isEdit ? 'Salva modifiche' : 'Crea servizio'}
+								</>
+							)}
+						</button>
+					</div>
 					{/* Sezione: Informazioni base */}
 					<FormSection title="Informazioni base">
 						<div className="space-y-4">
@@ -262,35 +285,7 @@ const ServiceDetail = () => {
 						/>
 					</FormSection>
 
-					{/* Bottoni */}
-					<div className="flex justify-end gap-3 mt-8">
-						<button
-							type="button"
-							onClick={() => navigate('/admin/services')}
-							className="btn secondary-wire"
-							disabled={submitting}
-						>
-							Annulla
-						</button>
-						<button
-							type="submit"
-							className="btn primary bg-primary hover:bg-primary-dark"
-							disabled={submitting}
-						>
-							{submitting ? (
-								<>
-									<i className="fa-solid fa-spinner fa-spin mr-2" />
-									Salvataggio…
-								</>
-							) : (
-								<>
-									<i className={`fa-solid ${isEdit ? 'fa-floppy-disk' : 'fa-plus'} mr-2`} />
-									{isEdit ? 'Salva modifiche' : 'Crea servizio'}
-								</>
-							)}
-						</button>
-					</div>
-				</form>
+					</form>
 			</div>
 		</div>
 	)

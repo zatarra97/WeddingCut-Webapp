@@ -162,7 +162,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, userEmail, onLogout
 					<div className="flex-1" />
 
 					<div className="flex items-center gap-3">
-						<span className="hidden sm:block text-sm text-gray-500 truncate max-w-[200px]">
+						<span className="hidden sm:block text-sm text-gray-500 sm:truncate sm:max-w-[200px] md:overflow-visible md:text-clip md:max-w-none">
 							{userEmail}
 						</span>
 						<div className="flex items-center justify-center w-8 h-8 rounded-full bg-violet-100 text-violet-600 text-xs font-bold">

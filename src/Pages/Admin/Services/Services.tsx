@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import Table from '../../../Components/Table'
-import PageHeader from '../../../Components/PageHeader'
 import DeleteModal from '../../../Components/DeleteModal'
 import { getList, deleteItem } from '../../../services/api-utility'
 import type { Service } from './serviceSchema'
@@ -140,20 +139,14 @@ const Services = () => {
 
 	return (
 		<div className="min-h-full">
-			<PageHeader
-				icon="fa-solid fa-film"
-				title="Servizi"
-				subtitle="Gestione dei servizi di montaggio"
-				buttons={[
-					{
-						label: 'Nuovo servizio',
-						icon: 'fa-solid fa-plus',
-						variant: 'primary',
-						onClick: () => navigate('/admin/services/new'),
-					},
-				]}
-			/>
 			<div className="container mx-auto p-4 md:p-6">
+				<div className="flex items-center gap-4 mb-6">
+					<h1 className="text-2xl font-bold text-gray-800 flex-1">Servizi</h1>
+					<button onClick={() => navigate('/admin/services/new')} className="btn primary bg-primary hover:bg-primary-dark transition-colors duration-200">
+						<i className="fa-solid fa-plus mr-2"></i>
+						Nuovo servizio
+					</button>
+				</div>
 				<Table columns={columns} data={services} actions={actions} loading={loading} />
 			</div>
 

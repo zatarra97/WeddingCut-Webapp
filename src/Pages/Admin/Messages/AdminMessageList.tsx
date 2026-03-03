@@ -44,8 +44,8 @@ const AdminMessageList = () => {
 
 	return (
 		<div className="min-h-full">
-			<div className="container mx-auto p-4 md:p-6 max-w-3xl">
-				<h1 className="text-2xl font-bold text-gray-800 mb-6">Conversazioni</h1>
+			<div className="container mx-auto p-4 md:p-6">
+				<h1 className="text-2xl font-bold text-gray-800 mb-6">Messaggi</h1>
 
 				{/* Filtri */}
 				<div className="flex flex-col sm:flex-row gap-3 mb-6">

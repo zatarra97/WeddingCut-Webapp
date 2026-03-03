@@ -116,7 +116,7 @@ const AdminOrders = () => {
 								<td className="px-4 py-3 text-xs font-mono text-gray-500">{order.publicId.slice(0, 8)}…</td>
 								<td className="px-4 py-3 text-sm text-gray-700">{order.userEmail}</td>
 								<td className="px-4 py-3 font-medium text-gray-900 text-sm">{order.coupleName}</td>
-								<td className="px-4 py-3 text-gray-600 text-sm">{order.weddingDate}</td>
+								<td className="px-4 py-3 text-gray-600 text-sm">{new Date(order.weddingDate).toLocaleDateString("it-IT")}</td>
 								<td className="px-4 py-3 text-gray-700 text-sm font-medium">
 									{order.totalPrice != null ? `€${Number(order.totalPrice).toFixed(2)}` : <em className="text-gray-400 font-normal">Su richiesta</em>}
 								</td>
@@ -168,7 +168,7 @@ const AdminOrders = () => {
 										<div className="flex items-center justify-between mt-2.5 text-xs text-gray-500">
 											<span className="flex items-center gap-1">
 												<i className="fa-solid fa-calendar-alt text-gray-400" aria-hidden />
-												{order.weddingDate}
+												{new Date(order.weddingDate).toLocaleDateString("it-IT")}
 											</span>
 											<span className="font-semibold text-gray-700">
 												{order.totalPrice != null
