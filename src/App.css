@@ -169,3 +169,10 @@ input[type="number"]::-webkit-inner-spin-button {
 .form-input {
 	@apply text-gray-700 text-sm md:text-base;
 }
+
+/* ── User area: override violet focus ring with brown ── */
+.user-area .form-input:focus {
+	border-color: #8b6f4e !important;
+	box-shadow: 0 0 0 1px #8b6f4e !important;
+	outline: none !important;
+}

@@ -18,9 +18,14 @@ interface SelectProps {
 	disabled?: boolean
 	isClearable?: boolean
 	isSearchable?: boolean
+	colorScheme?: "violet" | "brown"
 }
 
-const CustomSelect = React.forwardRef<any, SelectProps>(({ label, name, value, onChange, onBlur, options, error, placeholder, disabled, isClearable = true, isSearchable = true }, ref) => {
+const CustomSelect = React.forwardRef<any, SelectProps>(({ label, name, value, onChange, onBlur, options, error, placeholder, disabled, isClearable = true, isSearchable = true, colorScheme = "violet" }, ref) => {
+	const focusColor = colorScheme === "brown" ? "#8b6f4e" : "#7c3aed"
+	const focusLight = colorScheme === "brown" ? "#f0e8df" : "#ede9fe"
+	const activeColor = colorScheme === "brown" ? "#705838" : "#8b5cf6"
+
 	const selectedOption = options.find((option) => {
 		return String(option.value) === String(value)
 	})
@@ -55,13 +60,13 @@ const CustomSelect = React.forwardRef<any, SelectProps>(({ label, name, value, o
 				styles={{
 					control: (baseStyles, state) => ({
 						...baseStyles,
-						borderColor: error ? "red" : state.isFocused ? "#7c3aed" : "#d1d5db",
-						boxShadow: state.isFocused ? "0 0 0 1px #7c3aed" : "none",
+						borderColor: error ? "red" : state.isFocused ? focusColor : "#d1d5db",
+						boxShadow: state.isFocused ? `0 0 0 1px ${focusColor}` : "none",
 						opacity: disabled ? 1 : 1,
 						color: disabled ? "#6B7280" : "#374151",
 						backgroundColor: disabled ? "#f8fafc" : "white",
 						"&:hover": {
-							borderColor: state.isFocused ? "#7c3aed" : "#d1d5db",
+							borderColor: state.isFocused ? focusColor : "#d1d5db",
 						},
 						fontSize: "form-input",
 					}),
@@ -75,9 +80,9 @@ const CustomSelect = React.forwardRef<any, SelectProps>(({ label, name, value, o
 					}),
 					option: (baseStyles, state) => ({
 						...baseStyles,
-						backgroundColor: state.isSelected ? "#7c3aed" : state.isFocused ? "#ede9fe" : "white",
+						backgroundColor: state.isSelected ? focusColor : state.isFocused ? focusLight : "white",
 						color: state.isSelected ? "white" : "#374151",
-						"&:active": { backgroundColor: "#8b5cf6" },
+						"&:active": { backgroundColor: activeColor },
 					}),
 					singleValue: (baseStyles) => ({
 						...baseStyles,

@@ -195,8 +195,8 @@ const DateTimePicker = React.forwardRef<HTMLDivElement, DateTimePickerProps>(
 						const handleFocus = () => {
 							if (input) {
 								input.style.outline = "none"
-								input.style.borderColor = error ? "#ef4444" : "#febe10"
-								input.style.boxShadow = `0 0 0 1px ${error ? "#ef4444" : "#febe10"}`
+								input.style.borderColor = error ? "#ef4444" : "#8b6f4e"
+								input.style.boxShadow = `0 0 0 1px ${error ? "#ef4444" : "#8b6f4e"}`
 							}
 						}
 
@@ -261,8 +261,8 @@ const DateTimePicker = React.forwardRef<HTMLDivElement, DateTimePickerProps>(
             }
 
             .custom-datepicker input:focus {
-              border-color: #febe10;
-              box-shadow: 0 0 0 1px #febe10;
+              border-color: #8b6f4e;
+              box-shadow: 0 0 0 1px #8b6f4e;
               position: relative;
               top: 0;
               left: 0;

@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-slate-100 flex items-center justify-center">
+    <div className="min-h-screen bg-[#f7f5f2] flex items-center justify-center">
       <div className="container px-4">
         <div className="max-w-2xl mx-auto text-center">
           <div className="relative">
@@ -12,10 +12,10 @@ export default function NotFound() {
             {/* Contenuto principale */}
             <div className="relative">
               <div className="mb-8">
-                <div className="inline-block p-4 rounded-full bg-primary/30 mb-6">
-                  <FontAwesomeIcon 
-                    icon={faExclamationTriangle} 
-                    className="text-primary text-6xl"
+                <div className="inline-block p-4 rounded-full bg-[#8b6f4e]/20 mb-6">
+                  <FontAwesomeIcon
+                    icon={faExclamationTriangle}
+                    className="text-[#8b6f4e] text-6xl"
                   />
                 </div>
                 <h1 className="text-5xl font-bold text-slate-900 mb-4">
@@ -31,7 +31,7 @@ export default function NotFound() {
 
               <Link 
                 to="/"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-primary hover:bg-primary-dark text-white font-semibold rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-primary/25"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-[#8b6f4e] hover:bg-[#705838] text-white font-semibold rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-[#8b6f4e]/25"
               >
                 <FontAwesomeIcon icon={faHome} className="text-lg" />
                 <span>Torna alla home</span>

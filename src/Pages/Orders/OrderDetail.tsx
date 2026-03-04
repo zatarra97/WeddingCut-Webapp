@@ -91,7 +91,7 @@ const OrderDetail = () => {
 		return (
 			<div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center">
 				<div className="text-center">
-					<div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600 mx-auto mb-3" />
+					<div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#8b6f4e] mx-auto mb-3" />
 					<p className="text-gray-500 text-sm">Caricamento ordine…</p>
 				</div>
 			</div>
@@ -101,7 +101,7 @@ const OrderDetail = () => {
 	if (!order) return null
 
 	return (
-		<div className="min-h-[calc(100vh-3.5rem)] bg-gray-100">
+		<div className="min-h-[calc(100vh-3.5rem)]">
 			<div className="container mx-auto px-4 py-6 md:py-8 max-w-4xl">
 				{/* Intestazione */}
 				<div className="flex items-center gap-3 mb-6">
@@ -122,8 +122,8 @@ const OrderDetail = () => {
 				<div className="space-y-6">
 					{/* Stato ordine — consegna e note admin */}
 					{(order.status === "completed" && order.deliveryLink) || order.adminNotes ? (
-						<div className="rounded-xl border border-purple-200 bg-purple-50 shadow-sm p-6 space-y-4">
-							<h2 className="text-base font-semibold text-purple-800">
+						<div className="rounded-xl border border-[#ddd0c0] bg-[#faf7f4] shadow-sm p-6 space-y-4">
+							<h2 className="text-base font-semibold text-[#705838]">
 								<i className="fa-solid fa-circle-info mr-2" />
 								Aggiornamenti
 							</h2>
@@ -172,7 +172,7 @@ const OrderDetail = () => {
 								{order.totalPrice != null && (
 									<div className="flex justify-between items-center pt-2 font-semibold text-sm">
 										<span className="text-gray-700">Totale</span>
-										<span className="text-purple-700">€{Number(order.totalPrice).toFixed(2)}</span>
+										<span className="text-[#8b6f4e]">€{Number(order.totalPrice).toFixed(2)}</span>
 									</div>
 								)}
 							</div>

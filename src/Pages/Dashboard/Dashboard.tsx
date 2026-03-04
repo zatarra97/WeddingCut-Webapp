@@ -65,8 +65,8 @@ const Dashboard = () => {
 				{/* Title row + search */}
 				<div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
 					<div>
-						<h1 className="text-2xl md:text-3xl font-bold text-purple-800">Progetti</h1>
-						<p className="text-base font-semibold text-purple-700 mt-0.5">{activeLabel}</p>
+						<h1 className="text-2xl md:text-3xl font-bold text-[#705838]">Progetti</h1>
+						<p className="text-base font-semibold text-[#8b6f4e] mt-0.5">{activeLabel}</p>
 					</div>
 					<div className="flex flex-col sm:items-end gap-2">
 						<div className="relative w-full sm:w-56">
@@ -74,12 +74,12 @@ const Dashboard = () => {
 							<input
 								type="text"
 								placeholder="Cerca"
-								className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+								className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-[#8b6f4e] focus:border-transparent"
 							/>
 						</div>
 						<button
 							type="button"
-							className="flex items-center gap-2 text-sm font-medium text-purple-700 hover:text-purple-800 cursor-pointer"
+							className="flex items-center gap-2 text-sm font-medium text-[#8b6f4e] hover:text-[#705838] cursor-pointer"
 						>
 							Data del matrimonio
 							<i className="fa-solid fa-sort" aria-hidden />
@@ -126,14 +126,14 @@ const Dashboard = () => {
 							<div className="flex items-center gap-2">
 								<button
 									type="button"
-									className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 text-purple-700 text-sm font-medium hover:bg-gray-200 transition-colors cursor-pointer"
+									className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 text-[#8b6f4e] text-sm font-medium hover:bg-gray-200 transition-colors cursor-pointer"
 								>
 									<i className="fa-solid fa-eye" aria-hidden />
 									Dettagli
 								</button>
 								<button
 									type="button"
-									className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-700 text-white text-sm font-medium hover:bg-purple-800 transition-colors cursor-pointer"
+									className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#8b6f4e] text-white text-sm font-medium hover:bg-[#705838] transition-colors cursor-pointer"
 								>
 									Ordina ora
 								</button>
@@ -144,7 +144,7 @@ const Dashboard = () => {
 					{/* Add project link */}
 					<Link
 						to="/user/orders/new"
-						className="w-full flex items-center justify-center gap-2 p-5 rounded-xl border-2 border-dashed border-purple-300 text-purple-700 font-medium hover:bg-purple-50 hover:border-purple-400 transition-colors"
+						className="w-full flex items-center justify-center gap-2 p-5 rounded-xl border-2 border-dashed border-[#c4a882] text-[#8b6f4e] font-medium hover:bg-[#faf7f4] hover:border-[#a68960] transition-colors"
 					>
 						<i className="fa-solid fa-plus" aria-hidden />
 						Nuovo progetto

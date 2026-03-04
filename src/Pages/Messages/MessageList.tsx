@@ -66,13 +66,13 @@ const MessageList = () => {
 	}
 
 	return (
-		<div className="min-h-[calc(100vh-3.5rem)] bg-gray-100">
+		<div className="min-h-[calc(100vh-3.5rem)]">
 			<div className="container mx-auto px-4 py-6 md:py-8 max-w-3xl">
 				<div className="flex items-center justify-between mb-6">
 					<h1 className="text-2xl font-bold text-gray-800">Messaggi</h1>
 					<button
 						onClick={openModal}
-						className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-700 text-white text-sm font-medium hover:bg-purple-800 transition-colors cursor-pointer"
+						className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#8b6f4e] text-white text-sm font-medium hover:bg-[#705838] transition-colors cursor-pointer"
 					>
 						<i className="fa-solid fa-plus" />
 						Nuova conversazione
@@ -81,7 +81,7 @@ const MessageList = () => {
 
 				{loading ? (
 					<div className="flex items-center gap-3 py-12 text-gray-500">
-						<i className="fa-solid fa-spinner fa-spin text-purple-600 text-xl" />
+						<i className="fa-solid fa-spinner fa-spin text-[#8b6f4e] text-xl" />
 						<span>Caricamento…</span>
 					</div>
 				) : conversations.length === 0 ? (
@@ -95,16 +95,16 @@ const MessageList = () => {
 							<button
 								key={conv.publicId}
 								onClick={() => navigate(`/user/messages/${conv.publicId}`)}
-								className="w-full flex items-start gap-4 p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:border-purple-300 hover:shadow-md transition-all text-left cursor-pointer"
+								className="w-full flex items-start gap-4 p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:border-[#c4a882] hover:shadow-md transition-all text-left cursor-pointer"
 							>
-								<div className="flex items-center justify-center w-10 h-10 rounded-full bg-purple-100 shrink-0">
-									<i className="fa-solid fa-comment-dots text-purple-600" />
+								<div className="flex items-center justify-center w-10 h-10 rounded-full bg-[#f0e8df] shrink-0">
+									<i className="fa-solid fa-comment-dots text-[#8b6f4e]" />
 								</div>
 								<div className="flex-1 min-w-0">
 									<div className="flex items-center gap-2 flex-wrap">
 										<span className="font-semibold text-gray-900 truncate">{conv.subject}</span>
 										{conv.unreadCount > 0 && (
-											<span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-purple-600 text-white text-xs font-bold">
+											<span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-[#8b6f4e] text-white text-xs font-bold">
 												{conv.unreadCount}
 											</span>
 										)}
@@ -148,7 +148,7 @@ const MessageList = () => {
 								value={subject}
 								onChange={(e) => setSubject(e.target.value)}
 								placeholder="Descrivi brevemente l'argomento…"
-								className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+								className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#8b6f4e] focus:ring-1 focus:ring-[#8b6f4e]"
 								autoFocus
 							/>
 						</div>
@@ -159,7 +159,7 @@ const MessageList = () => {
 								<select
 									value={selectedOrderId}
 									onChange={(e) => setSelectedOrderId(e.target.value)}
-									className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+									className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#8b6f4e] focus:ring-1 focus:ring-[#8b6f4e]"
 								>
 									<option value="">— Nessun ordine —</option>
 									{orders.map((o) => (
@@ -182,7 +182,7 @@ const MessageList = () => {
 								type="button"
 								onClick={handleCreate}
 								disabled={creating}
-								className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-700 text-white text-sm font-medium hover:bg-purple-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+								className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#8b6f4e] text-white text-sm font-medium hover:bg-[#705838] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
 							>
 								{creating ? <><i className="fa-solid fa-spinner fa-spin" /> Creazione…</> : <><i className="fa-solid fa-paper-plane" /> Crea</>}
 							</button>

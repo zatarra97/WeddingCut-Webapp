@@ -223,7 +223,7 @@ const AppContent: React.FC = () => {
           homeRoute="/user/dashboard"
         />
         <UserNav />
-        <main className="pt-28 min-h-screen bg-[#f7f5f2]">
+        <main className="pt-28 min-h-screen bg-[#f7f5f2] user-area">
           <ToastContainer />
           <Routes>
             <Route path="/user/dashboard" element={<ProtectedRoute requiredRole={USER_ROLES.USER}><Dashboard /></ProtectedRoute>} />

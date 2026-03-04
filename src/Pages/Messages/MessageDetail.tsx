@@ -97,7 +97,7 @@ const MessageDetail = () => {
 		return (
 			<div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center">
 				<div className="text-center">
-					<div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600 mx-auto mb-3" />
+					<div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#8b6f4e] mx-auto mb-3" />
 					<p className="text-gray-500 text-sm">Caricamento messaggi…</p>
 				</div>
 			</div>
@@ -107,7 +107,7 @@ const MessageDetail = () => {
 	const isClosed = conv?.status === "closed"
 
 	return (
-		<div className="flex flex-col h-[calc(100vh-3.5rem)] bg-gray-100">
+		<div className="flex flex-col h-[calc(100vh-3.5rem)] bg-[#f7f5f2]">
 			{/* Header */}
 			<div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3 shrink-0">
 				<button
@@ -142,12 +142,12 @@ const MessageDetail = () => {
 						const isUser = msg.senderRole === "user"
 						return (
 							<div key={msg.publicId} className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
-								<div className={`max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm ${isUser ? "bg-purple-600 text-white rounded-br-sm" : "bg-white text-gray-800 rounded-bl-sm border border-gray-200"}`}>
+								<div className={`max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm ${isUser ? "bg-[#8b6f4e] text-white rounded-br-sm" : "bg-white text-gray-800 rounded-bl-sm border border-gray-200"}`}>
 									{!isUser && (
-										<p className="text-xs font-semibold text-purple-600 mb-1">WeddingCut Team</p>
+										<p className="text-xs font-semibold text-[#8b6f4e] mb-1">WeddingCut Team</p>
 									)}
 									<p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
-									<p className={`text-[10px] mt-1 ${isUser ? "text-purple-200 text-right" : "text-gray-400"}`}>
+									<p className={`text-[10px] mt-1 ${isUser ? "text-[#d4b896] text-right" : "text-gray-400"}`}>
 										{new Date(msg.createdAt).toLocaleString("it-IT", {hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit"})}
 									</p>
 								</div>
@@ -173,12 +173,12 @@ const MessageDetail = () => {
 							onKeyDown={handleKeyDown}
 							placeholder="Scrivi un messaggio… (Invio per inviare, Shift+Invio per andare a capo)"
 							rows={2}
-							className="flex-1 resize-none rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none"
+							className="flex-1 resize-none rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-[#8b6f4e] focus:ring-1 focus:ring-[#8b6f4e] outline-none"
 						/>
 						<button
 							onClick={handleSend}
 							disabled={sending || !content.trim()}
-							className="flex items-center justify-center w-10 h-10 rounded-full bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer shrink-0"
+							className="flex items-center justify-center w-10 h-10 rounded-full bg-[#8b6f4e] text-white hover:bg-[#705838] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer shrink-0"
 							aria-label="Invia"
 						>
 							{sending ? <i className="fa-solid fa-spinner fa-spin text-sm" /> : <i className="fa-solid fa-paper-plane text-sm" />}

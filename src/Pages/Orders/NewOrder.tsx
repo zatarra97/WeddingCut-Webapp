@@ -225,7 +225,7 @@ const NewOrder = () => {
 	// ─── Render ───────────────────────────────────────────────────────────────
 
 	return (
-		<div className="min-h-[calc(100vh-3.5rem)] bg-gray-100 relative">
+		<div className="min-h-[calc(100vh-3.5rem)] relative">
 			<form onSubmit={handleSubmit}>
 				<div className="container mx-auto px-4 py-6 md:py-8 relative">
 					<div className="flex flex-col lg:flex-row gap-8">
@@ -235,7 +235,7 @@ const NewOrder = () => {
 
 							{/* Intestazione progetto */}
 							<div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 md:p-8 space-y-6">
-								<h1 className="text-2xl font-bold text-purple-800">Nuovo progetto</h1>
+								<h1 className="text-2xl font-bold text-[#705838]">Nuovo progetto</h1>
 								<div className="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
 									<div className="sm:col-span-3">
 										<Input
@@ -266,7 +266,7 @@ const NewOrder = () => {
 
 								{loadingServices ? (
 									<div className="flex items-center gap-3 py-8 text-gray-500">
-										<i className="fa-solid fa-spinner fa-spin text-purple-600" />
+										<i className="fa-solid fa-spinner fa-spin text-[#8b6f4e]" />
 										<span>Caricamento servizi in corso…</span>
 									</div>
 								) : services.length === 0 ? (
@@ -283,7 +283,7 @@ const NewOrder = () => {
 												<div
 													key={service.publicId}
 													className={`rounded-xl border-2 p-4 transition-colors ${
-														selected ? "border-purple-500 bg-purple-50" : "border-gray-200 bg-white"
+														selected ? "border-[#8b6f4e] bg-[#faf7f4]" : "border-gray-200 bg-white"
 													}`}
 												>
 													<div className="flex items-start gap-3">
@@ -292,7 +292,7 @@ const NewOrder = () => {
 															type="checkbox"
 															checked={selected}
 															onChange={() => toggleService(service)}
-															className="mt-1 rounded border-gray-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
+															className="mt-1 rounded border-gray-300 text-[#8b6f4e] focus:ring-[#8b6f4e] cursor-pointer"
 														/>
 														<label htmlFor={`check-${service.publicId}`} className="flex-1 min-w-0 cursor-pointer">
 															<div className="flex flex-wrap items-center gap-2">
@@ -303,7 +303,7 @@ const NewOrder = () => {
 																	</span>
 																)}
 																{service.orientation !== "both" && (
-																	<span className="inline-flex items-center gap-1 text-xs font-medium text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full">
+																	<span className="inline-flex items-center gap-1 text-xs font-medium text-[#8b6f4e] bg-[#f0e8df] px-2 py-0.5 rounded-full">
 																		<i className={`fa-solid ${ORIENTATION_ICONS[service.orientation]} text-[10px]`} aria-hidden />
 																		{ORIENTATION_LABELS[service.orientation]}
 																	</span>
@@ -339,7 +339,7 @@ const NewOrder = () => {
 																<div className="space-y-1.5">
 																	<div className="flex items-center justify-between">
 																		<p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Durata</p>
-																		<span className="text-sm font-semibold text-purple-700">
+																		<span className="text-sm font-semibold text-[#8b6f4e]">
 																			{sel?.duration ?? service.minDuration} min
 																		</span>
 																	</div>
@@ -350,7 +350,7 @@ const NewOrder = () => {
 																		step={1}
 																		value={sel?.duration ?? service.minDuration}
 																		onChange={(e) => changeDuration(service.publicId, Number(e.target.value))}
-																		className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-purple-600 bg-gray-200"
+																		className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-[#8b6f4e] bg-gray-200"
 																	/>
 																	<div className="flex justify-between text-xs text-gray-400">
 																		<span>{service.minDuration} min</span>
@@ -372,18 +372,18 @@ const NewOrder = () => {
 																			return (
 																				<div key={o} className="relative">
 																					{optionHasSavings && (
-																						<span className={`absolute -top-2.5 left-1/2 -translate-x-1/2 z-10 text-[10px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap ${active ? "bg-purple-700 text-white" : "bg-purple-600 text-white"}`}>
+																						<span className={`absolute -top-2.5 left-1/2 -translate-x-1/2 z-10 text-[10px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap ${active ? "bg-[#705838] text-white" : "bg-[#8b6f4e] text-white"}`}>
 																							Risparmio €{savings % 1 === 0 ? savings : savings.toFixed(2)}
 																						</span>
 																					)}
 																					<label
 																						htmlFor={radioId}
-																						className={`flex flex-col items-center gap-1 px-2 py-3 rounded-lg border-2 transition-all cursor-pointer text-center ${active ? "border-purple-500 bg-purple-50" : "border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50"}`}
+																						className={`flex flex-col items-center gap-1 px-2 py-3 rounded-lg border-2 transition-all cursor-pointer text-center ${active ? "border-[#8b6f4e] bg-[#faf7f4]" : "border-gray-200 bg-white hover:border-[#c4a882] hover:bg-[#faf7f4]"}`}
 																					>
 																						<input id={radioId} type="radio" name={`orientation-${service.publicId}`} value={o} checked={active} onChange={() => changeOrientation(service.publicId, o)} className="sr-only" />
-																						<i className={`fa-solid ${ORIENTATION_ICONS[o]} text-base ${active ? "text-purple-600" : "text-gray-400"}`} aria-hidden />
-																						<span className={`text-xs font-medium ${active ? "text-purple-700" : "text-gray-600"}`}>{ORIENTATION_LABELS[o]}</span>
-																						<span className={`text-sm font-bold ${active ? "text-purple-800" : "text-gray-900"}`}>
+																						<i className={`fa-solid ${ORIENTATION_ICONS[o]} text-base ${active ? "text-[#8b6f4e]" : "text-gray-400"}`} aria-hidden />
+																						<span className={`text-xs font-medium ${active ? "text-[#8b6f4e]" : "text-gray-600"}`}>{ORIENTATION_LABELS[o]}</span>
+																						<span className={`text-sm font-bold ${active ? "text-[#705838]" : "text-gray-900"}`}>
 																							{price != null ? `€${price.toFixed(2)}` : <span className="text-xs font-normal italic text-gray-400">Su richiesta</span>}
 																						</span>
 																					</label>
@@ -433,12 +433,12 @@ const NewOrder = () => {
 											<label
 												key={method}
 												htmlFor={`delivery-${method}`}
-												className={`flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${active ? "border-purple-500 bg-purple-50" : "border-gray-200 bg-white hover:border-purple-200 hover:bg-gray-50"}`}
+												className={`flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${active ? "border-[#8b6f4e] bg-[#faf7f4]" : "border-gray-200 bg-white hover:border-[#ddd0c0] hover:bg-gray-50"}`}
 											>
 												<input id={`delivery-${method}`} type="radio" name="deliveryMethod" value={method} checked={active} onChange={() => setDeliveryMethod(method)} className="sr-only" />
-												<i className={`fa-solid ${icon} text-xl mt-0.5 shrink-0 ${active ? "text-purple-600" : "text-gray-400"}`} aria-hidden />
+												<i className={`fa-solid ${icon} text-xl mt-0.5 shrink-0 ${active ? "text-[#8b6f4e]" : "text-gray-400"}`} aria-hidden />
 												<div>
-													<p className={`font-medium ${active ? "text-purple-800" : "text-gray-900"}`}>{title}</p>
+													<p className={`font-medium ${active ? "text-[#705838]" : "text-gray-900"}`}>{title}</p>
 													<p className="text-sm text-gray-500 mt-0.5">{desc}</p>
 												</div>
 											</label>
@@ -501,13 +501,13 @@ const NewOrder = () => {
 											<label
 												key={opt.value}
 												htmlFor={`camera-${opt.value}`}
-												className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 cursor-pointer transition-all text-center ${active ? "border-purple-500 bg-purple-50" : "border-gray-200 bg-white hover:border-purple-200 hover:bg-gray-50"}`}
+												className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 cursor-pointer transition-all text-center ${active ? "border-[#8b6f4e] bg-[#faf7f4]" : "border-gray-200 bg-white hover:border-[#ddd0c0] hover:bg-gray-50"}`}
 											>
 												<input id={`camera-${opt.value}`} type="radio" name="cameraCount" value={opt.value} checked={active} onChange={() => setCameraCount(opt.value)} className="sr-only" />
-												<i className={`fa-solid fa-video text-2xl ${active ? "text-purple-600" : "text-gray-400"}`} aria-hidden />
-												<span className={`font-semibold text-lg ${active ? "text-purple-800" : "text-gray-900"}`}>{opt.label}</span>
+												<i className={`fa-solid fa-video text-2xl ${active ? "text-[#8b6f4e]" : "text-gray-400"}`} aria-hidden />
+												<span className={`font-semibold text-lg ${active ? "text-[#705838]" : "text-gray-900"}`}>{opt.label}</span>
 												{opt.surcharge > 0
-													? <span className={`text-xs font-medium ${active ? "text-purple-600" : "text-orange-500"}`}>+€{opt.surcharge}</span>
+													? <span className={`text-xs font-medium ${active ? "text-[#8b6f4e]" : "text-orange-500"}`}>+€{opt.surcharge}</span>
 													: <span className="text-xs text-gray-400">Incluso</span>
 												}
 											</label>
@@ -524,6 +524,7 @@ const NewOrder = () => {
 								</div>
 								<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 									<Select
+										colorScheme="brown"
 										name="exportFps"
 										label="Frame rate (FPS)"
 										value={exportFps}
@@ -532,6 +533,7 @@ const NewOrder = () => {
 										placeholder="Seleziona FPS"
 									/>
 									<Select
+										colorScheme="brown"
 										name="exportBitrate"
 										label="Bitrate (Mbps)"
 										value={exportBitrate}
@@ -540,6 +542,7 @@ const NewOrder = () => {
 										placeholder="Seleziona bitrate"
 									/>
 									<Select
+										colorScheme="brown"
 										name="exportAspect"
 										label="Formato (aspect ratio)"
 										value={exportAspect}
@@ -548,6 +551,7 @@ const NewOrder = () => {
 										placeholder="Seleziona formato"
 									/>
 									<Select
+										colorScheme="brown"
 										name="exportResolution"
 										label="Risoluzione"
 										value={exportResolution}
@@ -563,8 +567,8 @@ const NewOrder = () => {
 						{/* ── Colonna destra: riepilogo ── */}
 						<aside className="lg:w-80 shrink-0">
 							<div className="lg:sticky lg:top-24 rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-								<div className="bg-purple-100 px-4 py-3 border-b border-purple-200">
-									<h2 className="text-lg font-semibold text-purple-800">Riepilogo</h2>
+								<div className="bg-[#f0e8df] px-4 py-3 border-b border-[#ddd0c0]">
+									<h2 className="text-lg font-semibold text-[#705838]">Riepilogo</h2>
 								</div>
 								<div className="p-4 space-y-3">
 									{coupleNames && (
@@ -615,7 +619,7 @@ const NewOrder = () => {
 
 											<div className="border-t border-gray-200 pt-3 flex justify-between font-semibold text-base">
 												<span className="text-gray-800">Totale</span>
-												<span className="text-purple-700">€{totalPrice.toFixed(2)}</span>
+												<span className="text-[#8b6f4e]">€{totalPrice.toFixed(2)}</span>
 											</div>
 
 											{hasUnpricedServices && (
@@ -633,7 +637,7 @@ const NewOrder = () => {
 									<button
 										type="submit"
 										disabled={submitting || loadingServices}
-										className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-purple-700 text-white font-medium hover:bg-purple-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+										className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#8b6f4e] text-white font-medium hover:bg-[#705838] disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
 									>
 										{submitting
 											? <><i className="fa-solid fa-spinner fa-spin" /> Invio in corso…</>
