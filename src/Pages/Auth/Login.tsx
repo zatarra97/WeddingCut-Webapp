@@ -232,7 +232,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, onForgotPassword, loadin
 	return (
 		<div className="space-y-8">
 			<div className="space-y-1 text-center">
-				<h1 className="text-2xl font-bold text-slate-900 tracking-tight">Accedi</h1>
+				<h1 className="text-2xl font-bold text-slate-900 tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>Accedi</h1>
 				<p className="text-sm text-slate-500">Inserisci email e password per continuare.</p>
 			</div>
 			<form className="space-y-5" onSubmit={handleSubmit(onLogin)}>
@@ -251,11 +251,11 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, onForgotPassword, loadin
 				</button>
 			</form>
 			<div className="text-center space-y-3 pt-2 border-t border-slate-100">
-				<button type="button" onClick={onForgotPassword} className="block w-full text-sm text-slate-500 hover:text-primary-dark transition-colors cursor-pointer" disabled={loading}>
+				<button type="button" onClick={onForgotPassword} className="block w-full text-sm text-slate-500 hover:text-[#8b6f4e] transition-colors cursor-pointer" disabled={loading}>
 					Ho dimenticato la password
 				</button>
-				<Link to="/accesso/registrati" className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-[#032b36] transition-colors">
-					Non hai un account? <span className="text-primary-dark">Registrati</span>
+				<Link to="/accesso/registrati" className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-[#1a1a2e] transition-colors">
+					Non hai un account? <span className="text-[#8b6f4e]">Registrati</span>
 				</Link>
 			</div>
 		</div>
@@ -271,7 +271,7 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onSendCode, onB
 	return (
 		<div className="space-y-8">
 			<div className="space-y-1 text-center">
-				<h1 className="text-2xl font-bold text-slate-900 tracking-tight">Recupero password</h1>
+				<h1 className="text-2xl font-bold text-slate-900 tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>Recupero password</h1>
 				<p className="text-sm text-slate-500">Inserisci l'email per ricevere il codice.</p>
 			</div>
 			<form className="space-y-5" onSubmit={handleSubmit(onSendCode)}>
@@ -282,7 +282,7 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onSendCode, onB
 					{loading ? <><i className="fa-solid fa-spinner fa-spin" /> Invio...</> : <><i className="fa-solid fa-paper-plane" /> Invia codice</>}
 				</button>
 			</form>
-			<button type="button" onClick={onBackToLogin} className="w-full text-sm text-slate-500 hover:text-primary-dark flex items-center justify-center gap-1.5 transition-colors" disabled={loading}>
+			<button type="button" onClick={onBackToLogin} className="w-full text-sm text-slate-500 hover:text-[#8b6f4e] flex items-center justify-center gap-1.5 transition-colors" disabled={loading}>
 				<i className="fas fa-arrow-left" /> Torna al login
 			</button>
 		</div>
@@ -298,7 +298,7 @@ const ConfirmCodeForm: React.FC<ConfirmCodeFormProps> = ({ onConfirmCode, onBack
 	return (
 		<div className="space-y-8">
 			<div className="space-y-1 text-center">
-				<h1 className="text-2xl font-bold text-slate-900 tracking-tight">Nuova password</h1>
+				<h1 className="text-2xl font-bold text-slate-900 tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>Nuova password</h1>
 				<p className="text-sm text-slate-500">Codice e nuova password ricevuti via email.</p>
 				<p className="text-xs text-slate-400 mt-1">Inviato a: <span className="font-medium text-slate-600">{email}</span></p>
 			</div>
@@ -316,7 +316,7 @@ const ConfirmCodeForm: React.FC<ConfirmCodeFormProps> = ({ onConfirmCode, onBack
 					{loading ? <><i className="fa-solid fa-spinner fa-spin" /> Conferma...</> : <><i className="fa-solid fa-key" /> Reimposta password</>}
 				</button>
 			</form>
-			<button type="button" onClick={onBackToForgotPassword} className="w-full text-sm text-slate-500 hover:text-primary-dark flex items-center justify-center gap-1.5 transition-colors" disabled={loading}>
+			<button type="button" onClick={onBackToForgotPassword} className="w-full text-sm text-slate-500 hover:text-[#8b6f4e] flex items-center justify-center gap-1.5 transition-colors" disabled={loading}>
 				<i className="fas fa-arrow-left" /> Richiedi nuovo codice
 			</button>
 		</div>
@@ -332,7 +332,7 @@ const ResetForm: React.FC<ResetFormProps> = ({ onResetPassword, resetLoading }) 
 	return (
 		<div className="space-y-8">
 			<div className="space-y-1 text-center">
-				<h1 className="text-2xl font-bold text-slate-900 tracking-tight">Imposta password</h1>
+				<h1 className="text-2xl font-bold text-slate-900 tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>Imposta password</h1>
 				<p className="text-sm text-slate-500">Scegli una nuova password per il tuo account.</p>
 			</div>
 			<form className="space-y-5" onSubmit={handleSubmit(onResetPassword)}>

@@ -62,24 +62,8 @@ const columns = [
 		),
 	},
 	{
-		key: 'minDuration',
+		key: 'durationDescription',
 		header: 'Durata',
-		render: (_: any, item: Service) => {
-			if (item.durationDescription) return <span className="text-sm">{item.durationDescription}</span>
-			if (item.minDuration != null || item.maxDuration != null) {
-				return (
-					<span className="text-sm">
-						{item.minDuration ?? '?'}–{item.maxDuration ?? '?'} min
-					</span>
-				)
-			}
-			return <span className="text-gray-400">—</span>
-		},
-	},
-	{
-		key: 'description',
-		header: 'Descrizione',
-		type: 'note' as const,
 	},
 ]
 

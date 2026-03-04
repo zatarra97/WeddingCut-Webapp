@@ -10,6 +10,14 @@
 	--color-secondary-light: #032b36;
 	--color-secondary-dark: #032b36;
 
+	/* User palette — cinematografica */
+	--color-user-primary: #8b6f4e;
+	--color-user-primary-light: #a6896a;
+	--color-user-primary-dark: #705838;
+	--color-user-bg: #f7f5f2;
+	--color-user-navbar: #1a1a2e;
+	--color-user-accent: #c17c3e;
+
 	/* Font Family */
 	--font-family-sans: "Sora", ui-sans-serif, system-ui, sans-serif;
 	--default-font-family: "Sora", ui-sans-serif, system-ui, sans-serif;
@@ -76,7 +84,7 @@ table * {
 }
 
 .logoText {
-	color: #032b36;
+	color: #1a1a2e;
 	font-family: "Great Vibes", cursive;
 }
 

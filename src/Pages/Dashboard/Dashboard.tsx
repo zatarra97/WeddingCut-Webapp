@@ -35,7 +35,7 @@ const Dashboard = () => {
 	return (
 		<div className="min-h-[calc(100vh-64px)]">
 			{/* Tab bar */}
-			<nav className="sticky top-26 z-30 h-12 bg-purple-600 text-white shadow-sm">
+			<nav className="sticky top-28 z-30 h-12 bg-[#8b6f4e] text-white shadow-sm">
 				<div className="container mx-auto flex items-center gap-1 px-4 md:px-6 pt-2">
 				{TABS.map((tab) => (
 					<button
@@ -43,7 +43,7 @@ const Dashboard = () => {
 						type="button"
 						onClick={() => setActiveTab(tab.key)}
 						className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
-							activeTab === tab.key ? "bg-purple-700 text-white" : "text-purple-100 hover:bg-purple-500/50"
+							activeTab === tab.key ? "bg-[#705838] text-white" : "text-white/80 hover:bg-[#705838]/50"
 						}`}
 					>
 						{tab.label}

@@ -16,7 +16,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, logo, logoAlt = "Logo
 
 			{logo && (
 				<div className="relative z-10 mb-6 md:mb-8">
-					<img src={logo} alt={logoAlt} className="h-11 md:h-14 w-auto drop-shadow-sm" />
+					<img src={logo} alt={logoAlt} className="h-14 md:h-18 w-auto drop-shadow-sm" />
 				</div>
 			)}
 
@@ -25,6 +25,10 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, logo, logoAlt = "Logo
 					{children}
 				</div>
 			</div>
+
+			<p className="relative z-10 mt-6 text-sm text-white/50 tracking-widest uppercase">
+				Professional Wedding Video Editing
+			</p>
 		</section>
 	)
 }

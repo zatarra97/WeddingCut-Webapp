@@ -78,7 +78,7 @@ const Register: React.FC = () => {
 						<i className="fa-solid fa-check text-3xl" />
 					</div>
 					<div className="space-y-1">
-						<h1 className="text-2xl font-bold text-slate-900 tracking-tight">Registrazione completata</h1>
+						<h1 className="text-2xl font-bold text-slate-900 tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>Registrazione completata</h1>
 						<p className="text-sm text-slate-500">Il tuo account è attivo. Accedi con email e password.</p>
 					</div>
 					<button
@@ -138,7 +138,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegister, loading }) => {
 	return (
 		<div className="space-y-8">
 			<div className="space-y-1 text-center">
-				<h1 className="text-2xl font-bold text-slate-900 tracking-tight">Crea account</h1>
+				<h1 className="text-2xl font-bold text-slate-900 tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>Crea account</h1>
 				<p className="text-sm text-slate-500">Compila i campi. Riceverai un codice di verifica via email.</p>
 			</div>
 			<form className="space-y-4" onSubmit={handleSubmit(onRegister)}>
@@ -166,8 +166,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegister, loading }) => {
 				</button>
 			</form>
 			<div className="text-center pt-2 border-t border-slate-100">
-				<Link to="/accesso/login" className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-[#032b36] transition-colors">
-					<i className="fas fa-arrow-left" /> Hai già un account? <span className="text-primary-dark">Accedi</span>
+				<Link to="/accesso/login" className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-[#1a1a2e] transition-colors">
+					<i className="fas fa-arrow-left" /> Hai già un account? <span className="text-[#8b6f4e]">Accedi</span>
 				</Link>
 			</div>
 		</div>
@@ -195,7 +195,7 @@ const ConfirmCodeForm: React.FC<ConfirmCodeFormProps> = ({ email, onConfirm, onB
 	return (
 		<div className="space-y-8">
 			<div className="space-y-1 text-center">
-				<h1 className="text-2xl font-bold text-slate-900 tracking-tight">Verifica email</h1>
+				<h1 className="text-2xl font-bold text-slate-900 tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>Verifica email</h1>
 				<p className="text-sm text-slate-500">Inserisci il codice di 6 caratteri ricevuto via email.</p>
 				<p className="text-xs text-slate-400 mt-1">Inviato a: <span className="font-medium text-slate-600">{email}</span></p>
 			</div>
@@ -211,7 +211,7 @@ const ConfirmCodeForm: React.FC<ConfirmCodeFormProps> = ({ email, onConfirm, onB
 					{loading ? <><i className="fa-solid fa-spinner fa-spin" /> Verifica in corso...</> : <><i className="fa-solid fa-check" /> Conferma</>}
 				</button>
 			</form>
-			<button type="button" onClick={onBack} className="w-full text-sm text-slate-500 hover:text-primary-dark flex items-center justify-center gap-1.5 transition-colors" disabled={loading}>
+			<button type="button" onClick={onBack} className="w-full text-sm text-slate-500 hover:text-[#8b6f4e] flex items-center justify-center gap-1.5 transition-colors" disabled={loading}>
 				<i className="fas fa-arrow-left" /> Torna alla registrazione
 			</button>
 		</div>

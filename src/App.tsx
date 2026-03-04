@@ -166,9 +166,9 @@ const AppContent: React.FC = () => {
 
   if (isCheckingAuth) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-[#f7f5f2]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#8b6f4e] mx-auto mb-4"></div>
           <p className="text-gray-600">Recupero informazioni autenticazione</p>
         </div>
       </div>
@@ -223,7 +223,7 @@ const AppContent: React.FC = () => {
           homeRoute="/user/dashboard"
         />
         <UserNav />
-        <main className="pt-26 min-h-screen bg-gray-100">
+        <main className="pt-28 min-h-screen bg-[#f7f5f2]">
           <ToastContainer />
           <Routes>
             <Route path="/user/dashboard" element={<ProtectedRoute requiredRole={USER_ROLES.USER}><Dashboard /></ProtectedRoute>} />

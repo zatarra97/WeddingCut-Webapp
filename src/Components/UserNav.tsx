@@ -21,14 +21,14 @@ const UserNav = () => {
 	}, [])
 
 	return (
-		<nav className="fixed top-14 left-0 right-0 z-40 h-12 bg-white border-b border-gray-200 shadow-sm">
+		<nav className="fixed top-16 left-0 right-0 z-40 h-12 bg-white border-b border-[#e8e4df] shadow-sm">
 			<div className="container mx-auto flex items-center gap-1 px-4 md:px-6 h-full">
 				<NavLink
 					to="/user/dashboard"
 					className={({ isActive }) =>
 						`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
 							isActive
-								? "bg-purple-100 text-purple-700"
+								? "bg-[#8b6f4e]/10 text-[#8b6f4e]"
 								: "text-gray-600 hover:bg-gray-100 hover:text-gray-800"
 						}`
 					}
@@ -41,7 +41,7 @@ const UserNav = () => {
 					className={({ isActive }) =>
 						`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
 							isActive
-								? "bg-purple-100 text-purple-700"
+								? "bg-[#8b6f4e]/10 text-[#8b6f4e]"
 								: "text-gray-600 hover:bg-gray-100 hover:text-gray-800"
 						}`
 					}
@@ -49,7 +49,7 @@ const UserNav = () => {
 					<i className="fa-solid fa-comments" aria-hidden />
 					Messaggi
 					{unreadMessages > 0 && (
-						<span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-purple-600 text-white text-xs font-bold leading-none">
+						<span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-[#c17c3e] text-white text-xs font-bold leading-none">
 							{unreadMessages > 99 ? "99+" : unreadMessages}
 						</span>
 					)}
