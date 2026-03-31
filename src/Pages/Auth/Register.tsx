@@ -2,16 +2,11 @@ import { useNavigate, Link } from "react-router-dom"
 import { toast } from "react-toastify"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import logoOrizzontale from "../../Images/horizzontal.png"
+import logoOrizzontale from "../../Images/logo.png"
 import Input from "../../Components/Input"
 import AuthLayout from "../../Components/AuthLayout"
 import { cognitoService } from "../../services/cognito"
-import {
-	registrationSchema,
-	confirmRegistrationSchema,
-	type RegistrationFormData,
-	type ConfirmRegistrationFormData,
-} from "./registrationSchema"
+import { registrationSchema, confirmRegistrationSchema, type RegistrationFormData, type ConfirmRegistrationFormData } from "./registrationSchema"
 import { useState } from "react"
 import "./Auth.css"
 
@@ -78,7 +73,9 @@ const Register: React.FC = () => {
 						<i className="fa-solid fa-check text-3xl" />
 					</div>
 					<div className="space-y-1">
-						<h1 className="text-2xl font-bold text-slate-900 tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>Registrazione completata</h1>
+						<h1 className="text-2xl font-bold text-slate-900 tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
+							Registrazione completata
+						</h1>
 						<p className="text-sm text-slate-500">Il tuo account è attivo. Accedi con email e password.</p>
 					</div>
 					<button
@@ -138,35 +135,74 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegister, loading }) => {
 	return (
 		<div className="space-y-8">
 			<div className="space-y-1 text-center">
-				<h1 className="text-2xl font-bold text-slate-900 tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>Crea account</h1>
+				<h1 className="text-2xl font-bold text-slate-900 tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
+					Crea account
+				</h1>
 				<p className="text-sm text-slate-500">Compila i campi. Riceverai un codice di verifica via email.</p>
 			</div>
 			<form className="space-y-4" onSubmit={handleSubmit(onRegister)}>
 				<div className="auth-input-wrap">
-					<Input label="Nome completo" type="text" {...register("nomeCompleto")} error={errors.nomeCompleto ? { message: errors.nomeCompleto.message ?? "" } : undefined} />
+					<Input
+						label="Nome completo"
+						type="text"
+						{...register("nomeCompleto")}
+						error={errors.nomeCompleto ? { message: errors.nomeCompleto.message ?? "" } : undefined}
+					/>
 				</div>
 				<div className="auth-input-wrap">
-					<Input label="Telefono" type="tel" placeholder="+393331234567" {...register("telefono")} error={errors.telefono ? { message: errors.telefono.message ?? "" } : undefined} />
+					<Input
+						label="Telefono"
+						type="tel"
+						placeholder="+393331234567"
+						{...register("telefono")}
+						error={errors.telefono ? { message: errors.telefono.message ?? "" } : undefined}
+					/>
 				</div>
 				<div className="auth-input-wrap">
-					<Input label="Email" type="email" {...register("email")} error={errors.email ? { message: errors.email.message ?? "" } : undefined} />
+					<Input
+						label="Email"
+						type="email"
+						{...register("email")}
+						error={errors.email ? { message: errors.email.message ?? "" } : undefined}
+					/>
 				</div>
 				<div className="auth-input-wrap">
-					<Input label="Password" type="password" {...register("password")} error={errors.password ? { message: errors.password.message ?? "" } : undefined} />
+					<Input
+						label="Password"
+						type="password"
+						{...register("password")}
+						error={errors.password ? { message: errors.password.message ?? "" } : undefined}
+					/>
 				</div>
 				<div className="auth-input-wrap">
-					<Input label="Conferma password" type="password" {...register("confirmPassword")} error={errors.confirmPassword ? { message: errors.confirmPassword.message ?? "" } : undefined} />
+					<Input
+						label="Conferma password"
+						type="password"
+						{...register("confirmPassword")}
+						error={errors.confirmPassword ? { message: errors.confirmPassword.message ?? "" } : undefined}
+					/>
 				</div>
 				<button
 					type="submit"
 					className="auth-btn-primary mt-6 w-full flex items-center justify-center gap-2 rounded-xl py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
 					disabled={loading}
 				>
-					{loading ? <><i className="fa-solid fa-spinner fa-spin" /> Registrazione in corso...</> : <><i className="fa-solid fa-user-plus" /> Registrati</>}
+					{loading ? (
+						<>
+							<i className="fa-solid fa-spinner fa-spin" /> Registrazione in corso...
+						</>
+					) : (
+						<>
+							<i className="fa-solid fa-user-plus" /> Registrati
+						</>
+					)}
 				</button>
 			</form>
 			<div className="text-center pt-2 border-t border-slate-100">
-				<Link to="/accesso/login" className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-[#1a1a2e] transition-colors">
+				<Link
+					to="/accesso/login"
+					className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-[#1a1a2e] transition-colors"
+				>
 					<i className="fas fa-arrow-left" /> Hai già un account? <span className="text-[#8b6f4e]">Accedi</span>
 				</Link>
 			</div>
@@ -195,23 +231,47 @@ const ConfirmCodeForm: React.FC<ConfirmCodeFormProps> = ({ email, onConfirm, onB
 	return (
 		<div className="space-y-8">
 			<div className="space-y-1 text-center">
-				<h1 className="text-2xl font-bold text-slate-900 tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>Verifica email</h1>
+				<h1 className="text-2xl font-bold text-slate-900 tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
+					Verifica email
+				</h1>
 				<p className="text-sm text-slate-500">Inserisci il codice di 6 caratteri ricevuto via email.</p>
-				<p className="text-xs text-slate-400 mt-1">Inviato a: <span className="font-medium text-slate-600">{email}</span></p>
+				<p className="text-xs text-slate-400 mt-1">
+					Inviato a: <span className="font-medium text-slate-600">{email}</span>
+				</p>
 			</div>
 			<form className="space-y-5" onSubmit={handleSubmit(onConfirm)}>
 				<div className="auth-input-wrap">
-					<Input label="Codice di verifica" type="text" maxLength={6} placeholder="000000" {...register("code")} error={errors.code ? { message: errors.code.message ?? "" } : undefined} />
+					<Input
+						label="Codice di verifica"
+						type="text"
+						maxLength={6}
+						placeholder="000000"
+						{...register("code")}
+						error={errors.code ? { message: errors.code.message ?? "" } : undefined}
+					/>
 				</div>
 				<button
 					type="submit"
 					className="auth-btn-primary mt-6 w-full flex items-center justify-center gap-2 rounded-xl py-3.5 text-sm disabled:opacity-70 cursor-pointer"
 					disabled={loading}
 				>
-					{loading ? <><i className="fa-solid fa-spinner fa-spin" /> Verifica in corso...</> : <><i className="fa-solid fa-check" /> Conferma</>}
+					{loading ? (
+						<>
+							<i className="fa-solid fa-spinner fa-spin" /> Verifica in corso...
+						</>
+					) : (
+						<>
+							<i className="fa-solid fa-check" /> Conferma
+						</>
+					)}
 				</button>
 			</form>
-			<button type="button" onClick={onBack} className="w-full text-sm text-slate-500 hover:text-[#8b6f4e] flex items-center justify-center gap-1.5 transition-colors" disabled={loading}>
+			<button
+				type="button"
+				onClick={onBack}
+				className="w-full text-sm text-slate-500 hover:text-[#8b6f4e] flex items-center justify-center gap-1.5 transition-colors"
+				disabled={loading}
+			>
 				<i className="fas fa-arrow-left" /> Torna alla registrazione
 			</button>
 		</div>

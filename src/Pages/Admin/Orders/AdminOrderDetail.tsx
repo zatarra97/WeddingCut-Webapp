@@ -39,6 +39,8 @@ interface Order {
 	status: "pending" | "in_progress" | "completed" | "cancelled"
 	adminNotes?: string
 	deliveryLink?: string
+	desiredDeliveryDate?: string
+	invoiceUrl?: string
 	createdAt: string
 	updatedAt: string
 }
@@ -88,6 +90,8 @@ const AdminOrderDetail = () => {
 	const [adminStatus, setAdminStatus] = useState("")
 	const [adminNotes, setAdminNotes] = useState("")
 	const [deliveryLink, setDeliveryLink] = useState("")
+	const [desiredDeliveryDate, setDesiredDeliveryDate] = useState("")
+	const [invoiceUrl, setInvoiceUrl] = useState("")
 	const [saving, setSaving] = useState(false)
 
 	// Mappa publicId → servizio per la visualizzazione dei nomi
@@ -105,6 +109,8 @@ const AdminOrderDetail = () => {
 				setAdminStatus(data.status)
 				setAdminNotes(data.adminNotes ?? "")
 				setDeliveryLink(data.deliveryLink ?? "")
+				setDesiredDeliveryDate(data.desiredDeliveryDate ?? "")
+				setInvoiceUrl(data.invoiceUrl ?? "")
 			})
 			.catch(() => {
 				toast.error("Ordine non trovato")
@@ -129,9 +135,11 @@ const AdminOrderDetail = () => {
 				status: adminStatus,
 				adminNotes: adminNotes.trim() || null,
 				deliveryLink: deliveryLink.trim() || null,
+				desiredDeliveryDate: desiredDeliveryDate || null,
+				invoiceUrl: invoiceUrl.trim() || null,
 			})
 			toast.success("Modifiche salvate")
-			setOrder((prev) => prev ? { ...prev, status: adminStatus as Order["status"], adminNotes: adminNotes.trim() || undefined, deliveryLink: deliveryLink.trim() || undefined } : prev)
+			setOrder((prev) => prev ? { ...prev, status: adminStatus as Order["status"], adminNotes: adminNotes.trim() || undefined, deliveryLink: deliveryLink.trim() || undefined, desiredDeliveryDate: desiredDeliveryDate || undefined, invoiceUrl: invoiceUrl.trim() || undefined } : prev)
 		} catch {
 			toast.error("Errore durante il salvataggio")
 		} finally {
@@ -193,6 +201,7 @@ const AdminOrderDetail = () => {
 							<InfoRow label="Utente" value={order.userEmail} />
 							<InfoRow label="Coppia" value={order.coupleName} />
 							<InfoRow label="Matrimonio" value={new Date(order.weddingDate).toLocaleDateString("it-IT")} />
+							<InfoRow label="Consegna desiderata" value={order.desiredDeliveryDate ? new Date(order.desiredDeliveryDate).toLocaleDateString("it-IT") : undefined} />
 							<InfoRow label="Telecamere" value={order.cameraCount} />
 							<InfoRow label="Creato il" value={new Date(order.createdAt).toLocaleString("it-IT")} />
 							<InfoRow label="Aggiornato il" value={new Date(order.updatedAt).toLocaleString("it-IT")} />
@@ -333,6 +342,25 @@ const AdminOrderDetail = () => {
 									/>
 								</div>
 
+								{/* Data consegna (modificabile dall'admin) */}
+								<div>
+									<label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+										Data di consegna
+									</label>
+									<input
+										type="date"
+										value={desiredDeliveryDate}
+										onChange={(e) => setDesiredDeliveryDate(e.target.value)}
+										className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
+									/>
+									{order.desiredDeliveryDate && desiredDeliveryDate !== order.desiredDeliveryDate && (
+										<p className="text-xs text-amber-600 mt-1">
+											<i className="fa-solid fa-triangle-exclamation mr-1" />
+											Data modificata rispetto alla richiesta dell'utente ({new Date(order.desiredDeliveryDate).toLocaleDateString("it-IT")})
+										</p>
+									)}
+								</div>
+
 								{/* Link consegna */}
 								<div>
 									<label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
@@ -345,6 +373,31 @@ const AdminOrderDetail = () => {
 										placeholder="https://…"
 										className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
 									/>
+								</div>
+
+								{/* Fattura */}
+								<div>
+									<label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+										Fattura (URL)
+									</label>
+									<input
+										type="url"
+										value={invoiceUrl}
+										onChange={(e) => setInvoiceUrl(e.target.value)}
+										placeholder="Link al documento della fattura…"
+										className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
+									/>
+									{invoiceUrl && (
+										<a
+											href={invoiceUrl}
+											target="_blank"
+											rel="noopener noreferrer"
+											className="inline-flex items-center gap-1.5 text-xs text-violet-600 hover:text-violet-800 mt-1.5"
+										>
+											<i className="fa-solid fa-file-invoice" />
+											Apri fattura
+										</a>
+									)}
 								</div>
 
 								{/* Salva */}

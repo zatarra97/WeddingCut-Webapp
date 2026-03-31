@@ -16,6 +16,7 @@ interface Conversation {
 	subject: string
 	orderId?: string
 	status: "open" | "closed"
+	chatMode?: "limited" | "realtime"
 }
 
 const POLL_INTERVAL = 5000
@@ -28,6 +29,7 @@ const MessageDetail = () => {
 	const [loading, setLoading] = useState(true)
 	const [content, setContent] = useState("")
 	const [sending, setSending] = useState(false)
+	const [chatMode, setChatMode] = useState<"limited" | "realtime">("limited")
 	const bottomRef = useRef<HTMLDivElement>(null)
 	const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -52,7 +54,10 @@ const MessageDetail = () => {
 		genericGet("user/conversations")
 			.then((convs: Conversation[]) => {
 				const found = convs.find((c) => c.publicId === publicId)
-				if (found) setConv(found)
+				if (found) {
+					setConv(found)
+					setChatMode(found.chatMode ?? "limited")
+				}
 			})
 			.catch(() => {})
 
@@ -70,6 +75,19 @@ const MessageDetail = () => {
 	useEffect(() => {
 		bottomRef.current?.scrollIntoView({behavior: "smooth"})
 	}, [messages])
+
+	// Calcola messaggi consecutivi user dalla fine e se può inviare
+	const consecutiveUserMsgs = (() => {
+		let count = 0
+		for (let i = messages.length - 1; i >= 0; i--) {
+			if (messages[i].senderRole === "admin") break
+			if (messages[i].senderRole === "user") count++
+		}
+		return count
+	})()
+
+	const remainingMsgs = Math.max(0, 2 - consecutiveUserMsgs)
+	const userCanSend = chatMode === "realtime" || remainingMsgs > 0
 
 	const handleSend = async () => {
 		if (!content.trim() || !publicId) return
@@ -165,24 +183,47 @@ const MessageDetail = () => {
 						<i className="fa-solid fa-lock mr-2" />
 						Questa conversazione è chiusa.
 					</p>
+				) : !userCanSend ? (
+					<div className="flex items-center gap-3 bg-[#8b6f4e]/10 border border-[#8b6f4e]/30 rounded-xl px-4 py-3">
+						<i className="fa-solid fa-clock text-[#8b6f4e] text-lg shrink-0" />
+						<p className="text-sm text-[#6b5540]">
+							Abbiamo preso in carico la tua richiesta, risponderemo nelle prossime 48/72 ore.
+						</p>
+					</div>
 				) : (
-					<div className="flex items-end gap-3">
-						<textarea
-							value={content}
-							onChange={(e) => setContent(e.target.value)}
-							onKeyDown={handleKeyDown}
-							placeholder="Scrivi un messaggio… (Invio per inviare, Shift+Invio per andare a capo)"
-							rows={2}
-							className="flex-1 resize-none rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-[#8b6f4e] focus:ring-1 focus:ring-[#8b6f4e] outline-none"
-						/>
-						<button
-							onClick={handleSend}
-							disabled={sending || !content.trim()}
-							className="flex items-center justify-center w-10 h-10 rounded-full bg-[#8b6f4e] text-white hover:bg-[#705838] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer shrink-0"
-							aria-label="Invia"
-						>
-							{sending ? <i className="fa-solid fa-spinner fa-spin text-sm" /> : <i className="fa-solid fa-paper-plane text-sm" />}
-						</button>
+					<div className="space-y-2">
+						{chatMode === "realtime" ? (
+							<p className="text-xs text-green-600 flex items-center gap-1.5">
+								<i className="fa-solid fa-unlock text-[10px]" />
+								Chat libera — puoi scrivere senza limiti
+							</p>
+						) : (
+							<p className="text-xs text-gray-400 flex items-center gap-1.5">
+								<i className="fa-solid fa-comment text-[10px]" />
+								{remainingMsgs === 1
+									? "Puoi inviare ancora 1 messaggio prima di attendere una risposta"
+									: `Puoi inviare ancora ${remainingMsgs} messaggi prima di attendere una risposta`
+								}
+							</p>
+						)}
+						<div className="flex items-end gap-3">
+							<textarea
+								value={content}
+								onChange={(e) => setContent(e.target.value)}
+								onKeyDown={handleKeyDown}
+								placeholder="Scrivi un messaggio… (Invio per inviare, Shift+Invio per andare a capo)"
+								rows={2}
+								className="flex-1 resize-none rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-[#8b6f4e] focus:ring-1 focus:ring-[#8b6f4e] outline-none"
+							/>
+							<button
+								onClick={handleSend}
+								disabled={sending || !content.trim()}
+								className="flex items-center justify-center w-10 h-10 rounded-full bg-[#8b6f4e] text-white hover:bg-[#705838] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer shrink-0"
+								aria-label="Invia"
+							>
+								{sending ? <i className="fa-solid fa-spinner fa-spin text-sm" /> : <i className="fa-solid fa-paper-plane text-sm" />}
+							</button>
+						</div>
 					</div>
 				)}
 			</div>

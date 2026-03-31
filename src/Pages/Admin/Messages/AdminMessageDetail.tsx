@@ -17,6 +17,7 @@ interface Conversation {
 	subject: string
 	orderId?: string
 	status: "open" | "closed"
+	chatMode?: "limited" | "realtime"
 }
 
 const POLL_INTERVAL = 5000
@@ -30,6 +31,7 @@ const AdminMessageDetail = () => {
 	const [content, setContent] = useState("")
 	const [sending, setSending] = useState(false)
 	const [togglingStatus, setTogglingStatus] = useState(false)
+	const [togglingChatMode, setTogglingChatMode] = useState(false)
 	const bottomRef = useRef<HTMLDivElement>(null)
 	const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -106,6 +108,21 @@ const AdminMessageDetail = () => {
 		}
 	}
 
+	const toggleChatMode = async () => {
+		if (!publicId || !conv) return
+		const newMode = conv.chatMode === "realtime" ? "limited" : "realtime"
+		setTogglingChatMode(true)
+		try {
+			await genericPatch(`admin/conversations/${publicId}`, {chatMode: newMode})
+			setConv((prev) => prev ? {...prev, chatMode: newMode} : prev)
+			toast.success(newMode === "realtime" ? "Chat libera attivata" : "Chat limitata ripristinata")
+		} catch {
+			toast.error("Errore durante l'aggiornamento")
+		} finally {
+			setTogglingChatMode(false)
+		}
+	}
+
 	if (loading) {
 		return (
 			<div className="min-h-full flex items-center justify-center">
@@ -134,6 +151,22 @@ const AdminMessageDetail = () => {
 					<h1 className="font-semibold text-gray-900 truncate">{conv?.subject ?? "Conversazione"}</h1>
 					<p className="text-xs text-gray-400">{conv?.userEmail}</p>
 				</div>
+				<button
+					onClick={toggleChatMode}
+					disabled={togglingChatMode}
+					className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer disabled:opacity-50 ${
+						conv?.chatMode === "realtime"
+							? "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100"
+							: "bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100"
+					}`}
+				>
+					{togglingChatMode
+						? <i className="fa-solid fa-spinner fa-spin" />
+						: conv?.chatMode === "realtime"
+							? <><i className="fa-solid fa-lock-open" /> Chat libera</>
+							: <><i className="fa-solid fa-comments" /> Chat limitata</>
+					}
+				</button>
 				<button
 					onClick={toggleStatus}
 					disabled={togglingStatus}

@@ -49,17 +49,23 @@ const MessageList = () => {
 		setShowModal(true)
 	}
 
+	// Ordini disponibili = quelli senza una conversazione aperta
+	const availableOrders = orders.filter(
+		(o) => !conversations.some((c) => c.orderId === o.publicId && c.status === "open")
+	)
+
 	const handleCreate = async () => {
 		if (!subject.trim()) { toast.error("Inserisci un oggetto per la conversazione"); return }
+		if (!selectedOrderId) { toast.error("Seleziona un ordine da collegare"); return }
 		setCreating(true)
 		try {
-			const body: Record<string, string> = {subject: subject.trim()}
-			if (selectedOrderId) body.orderId = selectedOrderId
-			const conv = await genericPost("user/conversations", body)
+			const conv = await genericPost("user/conversations", {subject: subject.trim(), orderId: selectedOrderId})
 			setShowModal(false)
+			load()
 			navigate(`/user/messages/${conv.publicId}`)
-		} catch {
-			toast.error("Errore durante la creazione della conversazione")
+		} catch (err: any) {
+			const detail = err?.response?.data?.error?.message
+			toast.error(detail ?? "Errore durante la creazione della conversazione")
 		} finally {
 			setCreating(false)
 		}
@@ -141,32 +147,41 @@ const MessageList = () => {
 							</button>
 						</div>
 
-						<div>
-							<label className="block text-sm font-medium text-gray-700 mb-1">Oggetto *</label>
-							<input
-								type="text"
-								value={subject}
-								onChange={(e) => setSubject(e.target.value)}
-								placeholder="Descrivi brevemente l'argomento…"
-								className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#8b6f4e] focus:ring-1 focus:ring-[#8b6f4e]"
-								autoFocus
-							/>
-						</div>
-
-						{orders.length > 0 && (
-							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-1">Collega a un ordine (opzionale)</label>
-								<select
-									value={selectedOrderId}
-									onChange={(e) => setSelectedOrderId(e.target.value)}
-									className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#8b6f4e] focus:ring-1 focus:ring-[#8b6f4e]"
-								>
-									<option value="">— Nessun ordine —</option>
-									{orders.map((o) => (
-										<option key={o.publicId} value={o.publicId}>{o.coupleName}</option>
-									))}
-								</select>
+						{availableOrders.length === 0 ? (
+							<div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+								<i className="fa-solid fa-circle-info text-gray-400 text-lg shrink-0" />
+								<p className="text-sm text-gray-500">
+									Non ci sono ordini disponibili per aprire una nuova conversazione. Tutti i tuoi ordini hanno già una chat attiva.
+								</p>
 							</div>
+						) : (
+							<>
+								<div>
+									<label className="block text-sm font-medium text-gray-700 mb-1">Ordine *</label>
+									<select
+										value={selectedOrderId}
+										onChange={(e) => setSelectedOrderId(e.target.value)}
+										className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#8b6f4e] focus:ring-1 focus:ring-[#8b6f4e]"
+									>
+										<option value="">— Seleziona un ordine —</option>
+										{availableOrders.map((o) => (
+											<option key={o.publicId} value={o.publicId}>{o.coupleName}</option>
+										))}
+									</select>
+								</div>
+
+								<div>
+									<label className="block text-sm font-medium text-gray-700 mb-1">Oggetto *</label>
+									<input
+										type="text"
+										value={subject}
+										onChange={(e) => setSubject(e.target.value)}
+										placeholder="Descrivi brevemente l'argomento…"
+										className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#8b6f4e] focus:ring-1 focus:ring-[#8b6f4e]"
+										autoFocus
+									/>
+								</div>
+							</>
 						)}
 
 						<div className="flex justify-end gap-3 pt-2">
@@ -178,14 +193,16 @@ const MessageList = () => {
 							>
 								Annulla
 							</button>
-							<button
-								type="button"
-								onClick={handleCreate}
-								disabled={creating}
-								className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#8b6f4e] text-white text-sm font-medium hover:bg-[#705838] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-							>
-								{creating ? <><i className="fa-solid fa-spinner fa-spin" /> Creazione…</> : <><i className="fa-solid fa-paper-plane" /> Crea</>}
-							</button>
+							{availableOrders.length > 0 && (
+								<button
+									type="button"
+									onClick={handleCreate}
+									disabled={creating}
+									className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#8b6f4e] text-white text-sm font-medium hover:bg-[#705838] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+								>
+									{creating ? <><i className="fa-solid fa-spinner fa-spin" /> Creazione…</> : <><i className="fa-solid fa-paper-plane" /> Crea</>}
+								</button>
+							)}
 						</div>
 					</div>
 				</div>

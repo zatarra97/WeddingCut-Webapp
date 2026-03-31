@@ -4,7 +4,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom"
 import { toast } from "react-toastify"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import logoOrizzontale from "../../Images/horizzontal.png"
+import logoOrizzontale from "../../Images/logo.png"
 import Input from "../../Components/Input"
 import AuthLayout from "../../Components/AuthLayout"
 import { LOCAL_STORAGE_KEYS, DEFAULT_ROUTE_BY_ROLE, resolveRole } from "../../constants"
@@ -104,16 +104,16 @@ const LoginPage: React.FC<LoginPageProps> = ({ setIsAuthenticated, setUser, setU
 			localStorage.setItem(LOCAL_STORAGE_KEYS.ACCESS_TOKEN, accessToken)
 			localStorage.setItem(LOCAL_STORAGE_KEYS.USER_EMAIL, username)
 
-			const payload = JSON.parse(atob(idToken.split('.')[1]))
-			const groups: string[] = payload['cognito:groups'] ?? []
+			const payload = JSON.parse(atob(idToken.split(".")[1]))
+			const groups: string[] = payload["cognito:groups"] ?? []
 			const role = resolveRole(groups)
 			localStorage.setItem(LOCAL_STORAGE_KEYS.USER_ROLE, role)
 			setUserRole(role)
 
 			setIsAuthenticated(true)
 			setUser(cognitoUser)
-			const defaultRoute = DEFAULT_ROUTE_BY_ROLE[role] ?? '/user/dashboard'
-			navigate(returnUrl && returnUrl !== '/' ? returnUrl : defaultRoute)
+			const defaultRoute = DEFAULT_ROUTE_BY_ROLE[role] ?? "/user/dashboard"
+			navigate(returnUrl && returnUrl !== "/" ? returnUrl : defaultRoute)
 			localStorage.removeItem(LOCAL_STORAGE_KEYS.RETURN_URL)
 		} catch (err: unknown) {
 			const error = err as { name?: string; message?: string }
@@ -142,7 +142,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ setIsAuthenticated, setUser, setU
 			if (email) onLogin({ username: email, password: data.newPassword })
 		} catch (error: unknown) {
 			const err = error as { name?: string; message?: string }
-			toast.error(err.name === "InvalidPasswordException" ? "Password non valida. Usa maiuscole, minuscole, numeri e caratteri speciali." : (err.message ?? "Errore."))
+			toast.error(
+				err.name === "InvalidPasswordException"
+					? "Password non valida. Usa maiuscole, minuscole, numeri e caratteri speciali."
+					: (err.message ?? "Errore."),
+			)
 		} finally {
 			setResetLoading(false)
 		}
@@ -200,7 +204,16 @@ const LoginPage: React.FC<LoginPageProps> = ({ setIsAuthenticated, setUser, setU
 			case "reset":
 				return <ResetForm onResetPassword={onResetPassword} resetLoading={resetLoading} />
 			case "forgotPassword":
-				return <ForgotPasswordForm onSendCode={onSendForgotPasswordCode} onBackToLogin={() => { setCurrentView("login"); setForgotPasswordEmail("") }} loading={forgotPasswordLoading} />
+				return (
+					<ForgotPasswordForm
+						onSendCode={onSendForgotPasswordCode}
+						onBackToLogin={() => {
+							setCurrentView("login")
+							setForgotPasswordEmail("")
+						}}
+						loading={forgotPasswordLoading}
+					/>
+				)
 			case "confirmCode":
 				return (
 					<ConfirmCodeForm
@@ -215,15 +228,15 @@ const LoginPage: React.FC<LoginPageProps> = ({ setIsAuthenticated, setUser, setU
 		}
 	}
 
-	return (
-		<AuthLayout logo={logoOrizzontale}>
-			{renderCurrentView()}
-		</AuthLayout>
-	)
+	return <AuthLayout logo={logoOrizzontale}>{renderCurrentView()}</AuthLayout>
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({ onLogin, onForgotPassword, loading }) => {
-	const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
+	const {
+		register,
+		handleSubmit,
+		formState: { errors },
+	} = useForm<LoginFormData>({
 		resolver: zodResolver(loginSchema),
 		mode: "onChange",
 		defaultValues: { username: "", password: "" },
@@ -232,29 +245,57 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, onForgotPassword, loadin
 	return (
 		<div className="space-y-8">
 			<div className="space-y-1 text-center">
-				<h1 className="text-2xl font-bold text-slate-900 tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>Accedi</h1>
+				<h1 className="text-2xl font-bold text-slate-900 tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
+					Accedi
+				</h1>
 				<p className="text-sm text-slate-500">Inserisci email e password per continuare.</p>
 			</div>
 			<form className="space-y-5" onSubmit={handleSubmit(onLogin)}>
 				<div className="auth-input-wrap">
-					<Input label="Email" type="email" {...register("username")} error={errors.username ? { message: errors.username.message ?? "" } : undefined} />
+					<Input
+						label="Email"
+						type="email"
+						{...register("username")}
+						error={errors.username ? { message: errors.username.message ?? "" } : undefined}
+					/>
 				</div>
 				<div className="auth-input-wrap">
-					<Input label="Password" type="password" {...register("password")} error={errors.password ? { message: errors.password.message ?? "" } : undefined} />
+					<Input
+						label="Password"
+						type="password"
+						{...register("password")}
+						error={errors.password ? { message: errors.password.message ?? "" } : undefined}
+					/>
 				</div>
 				<button
 					type="submit"
 					className="auth-btn-primary mt-6 w-full flex items-center justify-center gap-2 rounded-xl py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
 					disabled={loading}
 				>
-					{loading ? <><i className="fa-solid fa-spinner fa-spin" /> Caricamento</> : <><i className="fa-solid fa-arrow-right" /> Accedi</>}
+					{loading ? (
+						<>
+							<i className="fa-solid fa-spinner fa-spin" /> Caricamento
+						</>
+					) : (
+						<>
+							<i className="fa-solid fa-arrow-right" /> Accedi
+						</>
+					)}
 				</button>
 			</form>
 			<div className="text-center space-y-3 pt-2 border-t border-slate-100">
-				<button type="button" onClick={onForgotPassword} className="block w-full text-sm text-slate-500 hover:text-[#8b6f4e] transition-colors cursor-pointer" disabled={loading}>
+				<button
+					type="button"
+					onClick={onForgotPassword}
+					className="block w-full text-sm text-slate-500 hover:text-[#8b6f4e] transition-colors cursor-pointer"
+					disabled={loading}
+				>
 					Ho dimenticato la password
 				</button>
-				<Link to="/accesso/registrati" className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-[#1a1a2e] transition-colors">
+				<Link
+					to="/accesso/registrati"
+					className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-[#1a1a2e] transition-colors"
+				>
 					Non hai un account? <span className="text-[#8b6f4e]">Registrati</span>
 				</Link>
 			</div>
@@ -263,7 +304,11 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, onForgotPassword, loadin
 }
 
 const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onSendCode, onBackToLogin, loading }) => {
-	const { register, handleSubmit, formState: { errors } } = useForm<ForgotPasswordFormData>({
+	const {
+		register,
+		handleSubmit,
+		formState: { errors },
+	} = useForm<ForgotPasswordFormData>({
 		resolver: zodResolver(forgotPasswordSchema),
 		mode: "onChange",
 		defaultValues: { email: "" },
@@ -271,18 +316,42 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onSendCode, onB
 	return (
 		<div className="space-y-8">
 			<div className="space-y-1 text-center">
-				<h1 className="text-2xl font-bold text-slate-900 tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>Recupero password</h1>
+				<h1 className="text-2xl font-bold text-slate-900 tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
+					Recupero password
+				</h1>
 				<p className="text-sm text-slate-500">Inserisci l'email per ricevere il codice.</p>
 			</div>
 			<form className="space-y-5" onSubmit={handleSubmit(onSendCode)}>
 				<div className="auth-input-wrap">
-					<Input label="Email" type="email" {...register("email")} error={errors.email ? { message: errors.email.message ?? "" } : undefined} />
+					<Input
+						label="Email"
+						type="email"
+						{...register("email")}
+						error={errors.email ? { message: errors.email.message ?? "" } : undefined}
+					/>
 				</div>
-				<button type="submit" className="auth-btn-primary mt-6 w-full flex items-center justify-center gap-2 rounded-xl py-3.5 text-sm disabled:opacity-70 cursor-pointer" disabled={loading}>
-					{loading ? <><i className="fa-solid fa-spinner fa-spin" /> Invio...</> : <><i className="fa-solid fa-paper-plane" /> Invia codice</>}
+				<button
+					type="submit"
+					className="auth-btn-primary mt-6 w-full flex items-center justify-center gap-2 rounded-xl py-3.5 text-sm disabled:opacity-70 cursor-pointer"
+					disabled={loading}
+				>
+					{loading ? (
+						<>
+							<i className="fa-solid fa-spinner fa-spin" /> Invio...
+						</>
+					) : (
+						<>
+							<i className="fa-solid fa-paper-plane" /> Invia codice
+						</>
+					)}
 				</button>
 			</form>
-			<button type="button" onClick={onBackToLogin} className="w-full text-sm text-slate-500 hover:text-[#8b6f4e] flex items-center justify-center gap-1.5 transition-colors" disabled={loading}>
+			<button
+				type="button"
+				onClick={onBackToLogin}
+				className="w-full text-sm text-slate-500 hover:text-[#8b6f4e] flex items-center justify-center gap-1.5 transition-colors"
+				disabled={loading}
+			>
 				<i className="fas fa-arrow-left" /> Torna al login
 			</button>
 		</div>
@@ -290,7 +359,11 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onSendCode, onB
 }
 
 const ConfirmCodeForm: React.FC<ConfirmCodeFormProps> = ({ onConfirmCode, onBackToForgotPassword, email, loading }) => {
-	const { register, handleSubmit, formState: { errors } } = useForm<ConfirmCodeFormData>({
+	const {
+		register,
+		handleSubmit,
+		formState: { errors },
+	} = useForm<ConfirmCodeFormData>({
 		resolver: zodResolver(confirmCodeSchema),
 		mode: "onChange",
 		defaultValues: { code: "", newPassword: "", confirmPassword: "" },
@@ -298,25 +371,61 @@ const ConfirmCodeForm: React.FC<ConfirmCodeFormProps> = ({ onConfirmCode, onBack
 	return (
 		<div className="space-y-8">
 			<div className="space-y-1 text-center">
-				<h1 className="text-2xl font-bold text-slate-900 tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>Nuova password</h1>
+				<h1 className="text-2xl font-bold text-slate-900 tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
+					Nuova password
+				</h1>
 				<p className="text-sm text-slate-500">Codice e nuova password ricevuti via email.</p>
-				<p className="text-xs text-slate-400 mt-1">Inviato a: <span className="font-medium text-slate-600">{email}</span></p>
+				<p className="text-xs text-slate-400 mt-1">
+					Inviato a: <span className="font-medium text-slate-600">{email}</span>
+				</p>
 			</div>
 			<form className="space-y-5" onSubmit={handleSubmit(onConfirmCode)}>
 				<div className="auth-input-wrap">
-					<Input label="Codice" type="text" {...register("code")} error={errors.code ? { message: errors.code.message ?? "" } : undefined} />
+					<Input
+						label="Codice"
+						type="text"
+						{...register("code")}
+						error={errors.code ? { message: errors.code.message ?? "" } : undefined}
+					/>
 				</div>
 				<div className="auth-input-wrap">
-					<Input label="Nuova password" type="password" {...register("newPassword")} error={errors.newPassword ? { message: errors.newPassword.message ?? "" } : undefined} />
+					<Input
+						label="Nuova password"
+						type="password"
+						{...register("newPassword")}
+						error={errors.newPassword ? { message: errors.newPassword.message ?? "" } : undefined}
+					/>
 				</div>
 				<div className="auth-input-wrap">
-					<Input label="Conferma password" type="password" {...register("confirmPassword")} error={errors.confirmPassword ? { message: errors.confirmPassword.message ?? "" } : undefined} />
+					<Input
+						label="Conferma password"
+						type="password"
+						{...register("confirmPassword")}
+						error={errors.confirmPassword ? { message: errors.confirmPassword.message ?? "" } : undefined}
+					/>
 				</div>
-				<button type="submit" className="auth-btn-primary mt-6 w-full flex items-center justify-center gap-2 rounded-xl py-3.5 text-sm disabled:opacity-70 cursor-pointer" disabled={loading}>
-					{loading ? <><i className="fa-solid fa-spinner fa-spin" /> Conferma...</> : <><i className="fa-solid fa-key" /> Reimposta password</>}
+				<button
+					type="submit"
+					className="auth-btn-primary mt-6 w-full flex items-center justify-center gap-2 rounded-xl py-3.5 text-sm disabled:opacity-70 cursor-pointer"
+					disabled={loading}
+				>
+					{loading ? (
+						<>
+							<i className="fa-solid fa-spinner fa-spin" /> Conferma...
+						</>
+					) : (
+						<>
+							<i className="fa-solid fa-key" /> Reimposta password
+						</>
+					)}
 				</button>
 			</form>
-			<button type="button" onClick={onBackToForgotPassword} className="w-full text-sm text-slate-500 hover:text-[#8b6f4e] flex items-center justify-center gap-1.5 transition-colors" disabled={loading}>
+			<button
+				type="button"
+				onClick={onBackToForgotPassword}
+				className="w-full text-sm text-slate-500 hover:text-[#8b6f4e] flex items-center justify-center gap-1.5 transition-colors"
+				disabled={loading}
+			>
 				<i className="fas fa-arrow-left" /> Richiedi nuovo codice
 			</button>
 		</div>
@@ -324,7 +433,11 @@ const ConfirmCodeForm: React.FC<ConfirmCodeFormProps> = ({ onConfirmCode, onBack
 }
 
 const ResetForm: React.FC<ResetFormProps> = ({ onResetPassword, resetLoading }) => {
-	const { register, handleSubmit, formState: { errors } } = useForm<ResetPasswordFormData>({
+	const {
+		register,
+		handleSubmit,
+		formState: { errors },
+	} = useForm<ResetPasswordFormData>({
 		resolver: zodResolver(resetPasswordSchema),
 		mode: "onChange",
 		defaultValues: { newPassword: "", confirmPassword: "" },
@@ -332,18 +445,42 @@ const ResetForm: React.FC<ResetFormProps> = ({ onResetPassword, resetLoading }) 
 	return (
 		<div className="space-y-8">
 			<div className="space-y-1 text-center">
-				<h1 className="text-2xl font-bold text-slate-900 tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>Imposta password</h1>
+				<h1 className="text-2xl font-bold text-slate-900 tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
+					Imposta password
+				</h1>
 				<p className="text-sm text-slate-500">Scegli una nuova password per il tuo account.</p>
 			</div>
 			<form className="space-y-5" onSubmit={handleSubmit(onResetPassword)}>
 				<div className="auth-input-wrap">
-					<Input label="Nuova password" type="password" {...register("newPassword")} error={errors.newPassword ? { message: errors.newPassword.message ?? "" } : undefined} />
+					<Input
+						label="Nuova password"
+						type="password"
+						{...register("newPassword")}
+						error={errors.newPassword ? { message: errors.newPassword.message ?? "" } : undefined}
+					/>
 				</div>
 				<div className="auth-input-wrap">
-					<Input label="Conferma password" type="password" {...register("confirmPassword")} error={errors.confirmPassword ? { message: errors.confirmPassword.message ?? "" } : undefined} />
+					<Input
+						label="Conferma password"
+						type="password"
+						{...register("confirmPassword")}
+						error={errors.confirmPassword ? { message: errors.confirmPassword.message ?? "" } : undefined}
+					/>
 				</div>
-				<button type="submit" className="auth-btn-primary mt-6 w-full flex items-center justify-center gap-2 rounded-xl py-3.5 text-sm disabled:opacity-70 cursor-pointer" disabled={resetLoading}>
-					{resetLoading ? <><i className="fa-solid fa-spinner fa-spin" /> Salvataggio...</> : <><i className="fa-solid fa-check" /> Salva password</>}
+				<button
+					type="submit"
+					className="auth-btn-primary mt-6 w-full flex items-center justify-center gap-2 rounded-xl py-3.5 text-sm disabled:opacity-70 cursor-pointer"
+					disabled={resetLoading}
+				>
+					{resetLoading ? (
+						<>
+							<i className="fa-solid fa-spinner fa-spin" /> Salvataggio...
+						</>
+					) : (
+						<>
+							<i className="fa-solid fa-check" /> Salva password
+						</>
+					)}
 				</button>
 			</form>
 		</div>

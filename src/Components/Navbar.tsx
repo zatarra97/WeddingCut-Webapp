@@ -1,6 +1,6 @@
 import React from "react"
 import { Link } from "react-router-dom"
-import logoOrizzontale from "../Images/horizzontal.png"
+import logoOrizzontale from "../Images/logo.png"
 
 interface NavbarProps {
 	userEmail: string
@@ -18,9 +18,7 @@ const Navbar: React.FC<NavbarProps> = ({ userEmail, onLogout, homeRoute = "/" })
 			</Link>
 			<div className="flex items-center gap-3">
 				<div className="flex items-center gap-2.5">
-					<div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#8b6f4e] text-white text-xs font-bold">
-						{initials}
-					</div>
+					<div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#8b6f4e] text-white text-xs font-bold">{initials}</div>
 					<span className="hidden md:inline text-sm text-white/70 truncate max-w-[200px]" title={userEmail}>
 						{userEmail}
 					</span>

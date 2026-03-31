@@ -95,6 +95,7 @@ const NewOrder = () => {
 	// Progetto
 	const [coupleNames,   setCoupleNames]   = useState("")
 	const [weddingDate,   setWeddingDate]   = useState("")
+	const [desiredDeliveryDate, setDesiredDeliveryDate] = useState("")
 
 	// Servizi
 	const [services,         setServices]         = useState<PublicService[]>([])
@@ -186,6 +187,7 @@ const NewOrder = () => {
 		e.preventDefault()
 		if (!coupleNames.trim())        { toast.error("Inserisci il nome della coppia");                        return }
 		if (!weddingDate)               { toast.error("Inserisci la data del matrimonio");                      return }
+		if (!desiredDeliveryDate)       { toast.error("Inserisci la data di consegna desiderata");              return }
 		if (selectedServices.length === 0) { toast.error("Seleziona almeno un servizio");                      return }
 		if (!deliveryMethod)            { toast.error("Seleziona come vuoi consegnare il materiale");           return }
 		if (deliveryMethod === "cloud_link" && !materialLink.trim()) { toast.error("Inserisci il link al materiale"); return }
@@ -197,6 +199,7 @@ const NewOrder = () => {
 			const payload = {
 				coupleName: coupleNames.trim(),
 				weddingDate,
+				desiredDeliveryDate,
 				selectedServices,
 				deliveryMethod,
 				materialLink: deliveryMethod === "cloud_link" ? materialLink.trim() : null,
@@ -236,8 +239,8 @@ const NewOrder = () => {
 							{/* Intestazione progetto */}
 							<div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 md:p-8 space-y-6">
 								<h1 className="text-2xl font-bold text-[#705838]">Nuovo progetto</h1>
-								<div className="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
-									<div className="sm:col-span-3">
+								<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+									<div className="sm:col-span-2">
 										<Input
 											name="coupleNames"
 											type="text"
@@ -247,11 +250,18 @@ const NewOrder = () => {
 											placeholder="Ad es. «Mario e Laura». Sarà il nome del progetto."
 										/>
 									</div>
-									<div className="sm:col-span-1">
+									<div>
 										<DateTimePicker
 											label="Data del matrimonio"
 											value={weddingDate || null}
 											onChange={(date) => setWeddingDate(date ?? "")}
+										/>
+									</div>
+									<div>
+										<DateTimePicker
+											label="Data di consegna desiderata"
+											value={desiredDeliveryDate || null}
+											onChange={(date) => setDesiredDeliveryDate(date ?? "")}
 										/>
 									</div>
 								</div>
@@ -578,7 +588,12 @@ const NewOrder = () => {
 									)}
 									{weddingDate && (
 										<div className="text-sm text-gray-700">
-											<span className="font-medium">Data:</span> {weddingDate}
+											<span className="font-medium">Matrimonio:</span> {weddingDate}
+										</div>
+									)}
+									{desiredDeliveryDate && (
+										<div className="text-sm text-gray-700">
+											<span className="font-medium">Consegna desiderata:</span> {desiredDeliveryDate}
 										</div>
 									)}
 
