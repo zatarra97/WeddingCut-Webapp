@@ -8,8 +8,8 @@ import { readFileSync } from 'fs'
 const packageJson = JSON.parse(readFileSync('./package.json', 'utf8'))
 
 // https://vite.dev/config/
-export default defineConfig({
-  base: '/WeddingCut-Webapp/',
+export default defineConfig(({ mode }) => ({
+  base: mode === 'production' ? '/' : '/WeddingCut-Webapp/',
   plugins: [react(), tailwindcss(), flowbiteReact()],
   build: {
     outDir: 'build'
@@ -17,4 +17,4 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(packageJson.version)
   }
-})
+}))

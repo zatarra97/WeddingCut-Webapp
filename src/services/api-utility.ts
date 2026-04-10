@@ -94,7 +94,7 @@ apiClient.interceptors.response.use(
 // ---------------------------------------------------------------------------
 export const ping = async (): Promise<any> => {
 	try {
-		const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/ping`)
+		const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/health`)
 		return response.data
 	} catch (error) {
 		console.error("Error:", error)
