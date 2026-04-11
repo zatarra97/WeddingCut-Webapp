@@ -203,7 +203,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegister, loading }) => {
 					to="/accesso/login"
 					className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-[#1a1a2e] transition-colors"
 				>
-					<i className="fas fa-arrow-left" /> Hai già un account? <span className="text-[#8b6f4e]">Accedi</span>
+					<i className="fas fa-arrow-left" /> Hai già un account? <span className="text-[#7c3aed]">Accedi</span>
 				</Link>
 			</div>
 		</div>
@@ -269,7 +269,7 @@ const ConfirmCodeForm: React.FC<ConfirmCodeFormProps> = ({ email, onConfirm, onB
 			<button
 				type="button"
 				onClick={onBack}
-				className="w-full text-sm text-slate-500 hover:text-[#8b6f4e] flex items-center justify-center gap-1.5 transition-colors"
+				className="w-full text-sm text-slate-500 hover:text-[#7c3aed] flex items-center justify-center gap-1.5 transition-colors"
 				disabled={loading}
 			>
 				<i className="fas fa-arrow-left" /> Torna alla registrazione

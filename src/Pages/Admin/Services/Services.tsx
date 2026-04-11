@@ -6,64 +6,91 @@ import DeleteModal from '../../../Components/DeleteModal'
 import { getList, deleteItem } from '../../../services/api-utility'
 import type { Service } from './serviceSchema'
 
-const ORIENTATION_LABELS: Record<string, string> = {
-	vertical: 'Verticale',
-	horizontal: 'Orizzontale',
-	both: 'Entrambi',
+const CATEGORY_LABELS: Record<string, string> = {
+	main: 'Principale',
+	extra: 'Extra',
+	delivery: 'Consegna',
 }
 
-const ORIENTATION_COLORS: Record<string, string> = {
-	vertical: 'bg-blue-100 text-blue-700',
-	horizontal: 'bg-green-100 text-green-700',
-	both: 'bg-purple-100 text-purple-700',
+const CATEGORY_COLORS: Record<string, string> = {
+	main: 'bg-blue-100 text-blue-700',
+	extra: 'bg-amber-100 text-amber-700',
+	delivery: 'bg-green-100 text-green-700',
 }
 
-const formatPrice = (price?: number | null) =>
-	price != null ? `€${Number(price).toFixed(2)}` : '—'
+const PRICING_LABELS: Record<string, string> = {
+	fixed: 'Fisso',
+	tiered: 'A fasce',
+	percentage: 'Percentuale',
+}
+
+const formatPricing = (item: Service) => {
+	if (item.pricingType === 'fixed')
+		return item.basePrice != null ? `€${Number(item.basePrice).toFixed(2)}` : '—'
+	if (item.pricingType === 'percentage')
+		return item.percentageValue != null ? `+${item.percentageValue}%` : '—'
+	if (item.pricingType === 'tiered') {
+		const tiers = item.priceTiers ?? []
+		if (!tiers.length) return '—'
+		const min = Math.min(...tiers.map((t) => t.price))
+		const max = Math.max(...tiers.map((t) => t.price))
+		return min === max ? `€${min.toFixed(2)}` : `€${min.toFixed(2)} – €${max.toFixed(2)}`
+	}
+	return '—'
+}
 
 const columns = [
 	{
-		key: 'name',
-		header: 'Nome',
-		width: '220px',
+		key: 'sortOrder',
+		header: '#',
+		width: '48px',
+		render: (value: number | null) => (
+			<span className="text-gray-400 text-xs">{value ?? '—'}</span>
+		),
 	},
 	{
-		key: 'orientation',
-		header: 'Orientamento',
-		width: '140px',
+		key: 'name',
+		header: 'Nome',
+	},
+	{
+		key: 'category',
+		header: 'Categoria',
+		width: '120px',
 		render: (value: string) => (
 			<span
 				className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-					ORIENTATION_COLORS[value] ?? 'bg-gray-100 text-gray-600'
+					CATEGORY_COLORS[value] ?? 'bg-gray-100 text-gray-600'
 				}`}
 			>
-				{ORIENTATION_LABELS[value] ?? value}
+				{CATEGORY_LABELS[value] ?? value}
 			</span>
 		),
 	},
 	{
-		key: 'priceVertical',
-		header: 'Prezzi',
-		render: (_: any, item: Service) => (
-			<div className="text-xs space-y-0.5">
-				<div>
-					<span className="text-gray-400">V: </span>
-					{formatPrice(item.priceVertical)}
-				</div>
-				<div>
-					<span className="text-gray-400">H: </span>
-					{formatPrice(item.priceHorizontal)}
-				</div>
-				<div>
-					<span className="text-gray-400">V+H: </span>
-					{formatPrice(item.priceBoth)}
-				</div>
-			</div>
+		key: 'pricingType',
+		header: 'Tariffazione',
+		width: '120px',
+		render: (value: string) => (
+			<span className="text-xs text-gray-500">{PRICING_LABELS[value] ?? value}</span>
 		),
 	},
 	{
-		key: 'durationDescription',
-		header: 'Durata',
+		key: 'basePrice',
+		header: 'Prezzo',
+		width: '140px',
+		render: (_: any, item: Service) => (
+			<span className="text-sm font-medium text-gray-700">{formatPricing(item)}</span>
+		),
+	},
+	{
+		key: 'isActive',
+		header: 'Attivo',
+		width: '70px',
+		render: (value: number) => (
+			<span className={`text-xs font-medium ${value ? 'text-green-600' : 'text-gray-400'}`}>
+				{value ? 'Sì' : 'No'}
+			</span>
+		),
 	},
 ]
 
@@ -81,7 +108,7 @@ const Services = () => {
 		setLoading(true)
 		try {
 			const data = await getList('services')
-			setServices(data)
+			setServices([...data].sort((a, b) => (a.sortOrder ?? 9999) - (b.sortOrder ?? 9999)))
 		} catch {
 			toast.error('Errore nel caricamento dei servizi.')
 		} finally {
@@ -126,7 +153,10 @@ const Services = () => {
 			<div className="container mx-auto p-4 md:p-6">
 				<div className="flex items-center gap-4 mb-6">
 					<h1 className="text-2xl font-bold text-gray-800 flex-1">Servizi</h1>
-					<button onClick={() => navigate('/admin/services/new')} className="btn primary bg-primary hover:bg-primary-dark transition-colors duration-200">
+					<button
+						onClick={() => navigate('/admin/services/new')}
+						className="btn primary bg-primary hover:bg-primary-dark transition-colors duration-200"
+					>
 						<i className="fa-solid fa-plus mr-2"></i>
 						Nuovo servizio
 					</button>

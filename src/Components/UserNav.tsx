@@ -28,7 +28,7 @@ const UserNav = () => {
 					className={({ isActive }) =>
 						`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
 							isActive
-								? "bg-[#8b6f4e]/10 text-[#8b6f4e]"
+								? "bg-[#7c3aed]/10 text-[#7c3aed]"
 								: "text-gray-600 hover:bg-gray-100 hover:text-gray-800"
 						}`
 					}
@@ -41,7 +41,7 @@ const UserNav = () => {
 					className={({ isActive }) =>
 						`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
 							isActive
-								? "bg-[#8b6f4e]/10 text-[#8b6f4e]"
+								? "bg-[#7c3aed]/10 text-[#7c3aed]"
 								: "text-gray-600 hover:bg-gray-100 hover:text-gray-800"
 						}`
 					}

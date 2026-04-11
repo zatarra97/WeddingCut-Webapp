@@ -46,7 +46,7 @@ const OrderList = () => {
 					<h1 className="text-2xl font-bold text-gray-800">I miei ordini</h1>
 					<button
 						onClick={() => navigate("/user/orders/new")}
-						className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#8b6f4e] text-white text-sm font-medium hover:bg-[#705838] transition-colors cursor-pointer"
+						className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#7c3aed] text-white text-sm font-medium hover:bg-[#6d28d9] transition-colors cursor-pointer"
 					>
 						<i className="fa-solid fa-plus" />
 						Nuovo ordine
@@ -55,7 +55,7 @@ const OrderList = () => {
 
 				{loading ? (
 					<div className="flex items-center gap-3 py-12 text-gray-500">
-						<i className="fa-solid fa-spinner fa-spin text-[#8b6f4e] text-xl" />
+						<i className="fa-solid fa-spinner fa-spin text-[#7c3aed] text-xl" />
 						<span>Caricamento ordini…</span>
 					</div>
 				) : orders.length === 0 ? (
@@ -86,7 +86,7 @@ const OrderList = () => {
 										<td className="px-4 py-3 font-medium text-gray-900 text-sm">{order.coupleName}</td>
 										<td className="px-4 py-3 text-gray-600 text-sm">{order.weddingDate}</td>
 										<td className="px-4 py-3">
-											<span className="inline-flex items-center gap-1 text-xs font-medium bg-[#f0e8df] text-[#8b6f4e] px-2 py-0.5 rounded-full">
+											<span className="inline-flex items-center gap-1 text-xs font-medium bg-[#ede9fe] text-[#7c3aed] px-2 py-0.5 rounded-full">
 												<i className="fa-solid fa-film text-[10px]" />
 												{Array.isArray(order.selectedServices) ? order.selectedServices.length : 0} servizi
 											</span>

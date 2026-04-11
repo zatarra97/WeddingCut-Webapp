@@ -115,7 +115,7 @@ const MessageDetail = () => {
 		return (
 			<div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center">
 				<div className="text-center">
-					<div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#8b6f4e] mx-auto mb-3" />
+					<div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#7c3aed] mx-auto mb-3" />
 					<p className="text-gray-500 text-sm">Caricamento messaggi…</p>
 				</div>
 			</div>
@@ -160,9 +160,9 @@ const MessageDetail = () => {
 						const isUser = msg.senderRole === "user"
 						return (
 							<div key={msg.publicId} className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
-								<div className={`max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm ${isUser ? "bg-[#8b6f4e] text-white rounded-br-sm" : "bg-white text-gray-800 rounded-bl-sm border border-gray-200"}`}>
+								<div className={`max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm ${isUser ? "bg-[#7c3aed] text-white rounded-br-sm" : "bg-white text-gray-800 rounded-bl-sm border border-gray-200"}`}>
 									{!isUser && (
-										<p className="text-xs font-semibold text-[#8b6f4e] mb-1">WeddingCut Team</p>
+										<p className="text-xs font-semibold text-[#7c3aed] mb-1">WeddingCut Team</p>
 									)}
 									<p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
 									<p className={`text-[10px] mt-1 ${isUser ? "text-[#d4b896] text-right" : "text-gray-400"}`}>
@@ -184,8 +184,8 @@ const MessageDetail = () => {
 						Questa conversazione è chiusa.
 					</p>
 				) : !userCanSend ? (
-					<div className="flex items-center gap-3 bg-[#8b6f4e]/10 border border-[#8b6f4e]/30 rounded-xl px-4 py-3">
-						<i className="fa-solid fa-clock text-[#8b6f4e] text-lg shrink-0" />
+					<div className="flex items-center gap-3 bg-[#7c3aed]/10 border border-[#7c3aed]/30 rounded-xl px-4 py-3">
+						<i className="fa-solid fa-clock text-[#7c3aed] text-lg shrink-0" />
 						<p className="text-sm text-[#6b5540]">
 							Abbiamo preso in carico la tua richiesta, risponderemo nelle prossime 48/72 ore.
 						</p>
@@ -213,12 +213,12 @@ const MessageDetail = () => {
 								onKeyDown={handleKeyDown}
 								placeholder="Scrivi un messaggio… (Invio per inviare, Shift+Invio per andare a capo)"
 								rows={2}
-								className="flex-1 resize-none rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-[#8b6f4e] focus:ring-1 focus:ring-[#8b6f4e] outline-none"
+								className="flex-1 resize-none rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-[#7c3aed] focus:ring-1 focus:ring-[#7c3aed] outline-none"
 							/>
 							<button
 								onClick={handleSend}
 								disabled={sending || !content.trim()}
-								className="flex items-center justify-center w-10 h-10 rounded-full bg-[#8b6f4e] text-white hover:bg-[#705838] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer shrink-0"
+								className="flex items-center justify-center w-10 h-10 rounded-full bg-[#7c3aed] text-white hover:bg-[#6d28d9] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer shrink-0"
 								aria-label="Invia"
 							>
 								{sending ? <i className="fa-solid fa-spinner fa-spin text-sm" /> : <i className="fa-solid fa-paper-plane text-sm" />}

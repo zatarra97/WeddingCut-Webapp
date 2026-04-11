@@ -18,7 +18,7 @@ const Navbar: React.FC<NavbarProps> = ({ userEmail, onLogout, homeRoute = "/" })
 			</Link>
 			<div className="flex items-center gap-3">
 				<div className="flex items-center gap-2.5">
-					<div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#8b6f4e] text-white text-xs font-bold">{initials}</div>
+					<div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#7c3aed] text-white text-xs font-bold">{initials}</div>
 					<span className="hidden md:inline text-sm text-white/70 truncate max-w-[200px]" title={userEmail}>
 						{userEmail}
 					</span>

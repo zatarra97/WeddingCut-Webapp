@@ -22,9 +22,9 @@ interface SelectProps {
 }
 
 const CustomSelect = React.forwardRef<any, SelectProps>(({ label, name, value, onChange, onBlur, options, error, placeholder, disabled, isClearable = true, isSearchable = true, colorScheme = "violet" }, ref) => {
-	const focusColor = colorScheme === "brown" ? "#8b6f4e" : "#7c3aed"
-	const focusLight = colorScheme === "brown" ? "#f0e8df" : "#ede9fe"
-	const activeColor = colorScheme === "brown" ? "#705838" : "#8b5cf6"
+	const focusColor = colorScheme === "brown" ? "#7c3aed" : "#7c3aed"
+	const focusLight = colorScheme === "brown" ? "#ede9fe" : "#ede9fe"
+	const activeColor = colorScheme === "brown" ? "#6d28d9" : "#8b5cf6"
 
 	const selectedOption = options.find((option) => {
 		return String(option.value) === String(value)

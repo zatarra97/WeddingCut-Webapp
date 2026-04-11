@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useForm, Controller } from 'react-hook-form'
+import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'react-toastify'
 import Input from '../../../Components/Input'
@@ -10,23 +10,30 @@ import FormSection from '../../../Components/FormSection'
 import { getItem, createItem, updateItem } from '../../../services/api-utility'
 import { serviceSchema, type ServiceFormData, type Service } from './serviceSchema'
 
-const ORIENTATION_OPTIONS = [
-	{ value: 'vertical', label: 'Verticale' },
-	{ value: 'horizontal', label: 'Orizzontale' },
-	{ value: 'both', label: 'Entrambi' },
+const CATEGORY_OPTIONS = [
+	{ value: 'main', label: 'Servizio principale' },
+	{ value: 'extra', label: 'Extra' },
+	{ value: 'delivery', label: 'Consegna' },
+]
+
+const PRICING_TYPE_OPTIONS = [
+	{ value: 'fixed', label: 'Prezzo fisso' },
+	{ value: 'tiered', label: 'A fasce' },
+	{ value: 'percentage', label: 'Percentuale su totale' },
 ]
 
 const DEFAULT_VALUES: ServiceFormData = {
 	name: '',
 	description: '',
 	durationDescription: '',
-	minDuration: null,
-	maxDuration: null,
-	orientation: 'both',
-	priceVertical: null,
-	priceHorizontal: null,
-	priceBoth: null,
-	additionalOptions: '',
+	category: 'main',
+	pricingType: 'fixed',
+	basePrice: null,
+	percentageValue: null,
+	priceTiers: [],
+	restrictedToService: null,
+	sortOrder: null,
+	isActive: true,
 }
 
 const ServiceDetail = () => {
@@ -42,14 +49,20 @@ const ServiceDetail = () => {
 		control,
 		reset,
 		watch,
-		setValue,
 		formState: { errors },
 	} = useForm<ServiceFormData>({
-		resolver: zodResolver(serviceSchema),
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		resolver: zodResolver(serviceSchema) as any,
 		defaultValues: DEFAULT_VALUES,
 	})
 
-	const orientation = watch('orientation')
+	const pricingType = watch('pricingType')
+	const category = watch('category')
+
+	const { fields: tierFields, append: appendTier, remove: removeTier } = useFieldArray({
+		control,
+		name: 'priceTiers',
+	})
 
 	useEffect(() => {
 		if (!isEdit) return
@@ -60,15 +73,14 @@ const ServiceDetail = () => {
 					name: data.name ?? '',
 					description: data.description ?? '',
 					durationDescription: data.durationDescription ?? '',
-					minDuration: data.minDuration ?? null,
-					maxDuration: data.maxDuration ?? null,
-					orientation: data.orientation ?? 'both',
-					priceVertical: data.priceVertical ?? null,
-					priceHorizontal: data.priceHorizontal ?? null,
-					priceBoth: data.priceBoth ?? null,
-					additionalOptions: data.additionalOptions
-						? JSON.stringify(data.additionalOptions, null, 2)
-						: '',
+					category: data.category ?? 'main',
+					pricingType: data.pricingType ?? 'fixed',
+					basePrice: data.basePrice ?? null,
+					percentageValue: data.percentageValue ?? null,
+					priceTiers: data.priceTiers ?? [],
+					restrictedToService: data.restrictedToService ?? null,
+					sortOrder: data.sortOrder ?? null,
+					isActive: data.isActive === undefined ? true : data.isActive !== 0,
 				})
 			} catch {
 				toast.error('Errore nel caricamento del servizio.')
@@ -86,17 +98,26 @@ const ServiceDetail = () => {
 			const payload: Record<string, any> = {
 				name: formData.name,
 				description: formData.description,
-				orientation: formData.orientation,
+				category: formData.category,
+				pricingType: formData.pricingType,
+				isActive: formData.isActive ? 1 : 0,
+				sortOrder: formData.sortOrder ?? null,
+				durationDescription: formData.durationDescription?.trim() || null,
+				restrictedToService: formData.restrictedToService?.trim() || null,
 			}
-			if (formData.durationDescription?.trim())
-				payload.durationDescription = formData.durationDescription.trim()
-			if (formData.minDuration != null) payload.minDuration = formData.minDuration
-			if (formData.maxDuration != null) payload.maxDuration = formData.maxDuration
-			if (formData.priceVertical != null) payload.priceVertical = formData.priceVertical
-			if (formData.priceHorizontal != null) payload.priceHorizontal = formData.priceHorizontal
-			if (formData.priceBoth != null) payload.priceBoth = formData.priceBoth
-			if (formData.additionalOptions?.trim())
-				payload.additionalOptions = JSON.parse(formData.additionalOptions)
+			if (formData.pricingType === 'fixed') {
+				payload.basePrice = formData.basePrice
+				payload.percentageValue = null
+				payload.priceTiers = null
+			} else if (formData.pricingType === 'tiered') {
+				payload.priceTiers = formData.priceTiers
+				payload.basePrice = null
+				payload.percentageValue = null
+			} else if (formData.pricingType === 'percentage') {
+				payload.percentageValue = formData.percentageValue
+				payload.basePrice = formData.basePrice ?? null
+				payload.priceTiers = null
+			}
 
 			if (isEdit) {
 				await updateItem('services', id!, payload)
@@ -127,7 +148,7 @@ const ServiceDetail = () => {
 	return (
 		<div className="min-h-full">
 			<div className="container mx-auto p-4 md:p-6">
-				<form onSubmit={handleSubmit(onSubmit)} noValidate>
+				<form onSubmit={handleSubmit(onSubmit as any)} noValidate>
 					<div className="flex items-center gap-4 mb-6">
 						<h1 className="text-2xl font-bold text-gray-800 flex-1">
 							{isEdit ? 'Modifica servizio' : 'Nuovo servizio'}
@@ -158,134 +179,188 @@ const ServiceDetail = () => {
 							)}
 						</button>
 					</div>
-					{/* Sezione: Informazioni base */}
+
+					{/* Informazioni base */}
 					<FormSection title="Informazioni base">
 						<div className="space-y-4">
 							<Input
 								label="Nome *"
-								name="name"
 								{...register('name')}
 								error={errors.name}
 							/>
 							<Textarea
 								label="Descrizione *"
-								name="description"
-								rows={4}
+								rows={3}
 								{...register('description')}
 								error={errors.description}
 							/>
+							<Input
+								label="Descrizione durata"
+								{...register('durationDescription')}
+								error={errors.durationDescription}
+								placeholder="Es. 30–60 min"
+							/>
+						</div>
+					</FormSection>
+
+					{/* Classificazione */}
+					<FormSection title="Classificazione">
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 							<Controller
-								name="orientation"
+								name="category"
 								control={control}
 								render={({ field }) => (
 									<Select
-										label="Orientamento *"
-										name="orientation"
+										label="Categoria *"
+										name="category"
 										value={field.value}
-										onChange={(e) => {
-											const val = e.target.value as 'vertical' | 'horizontal' | 'both'
-											field.onChange(val)
-											if (val === 'vertical') {
-												setValue('priceHorizontal', null)
-												setValue('priceBoth', null)
-											} else if (val === 'horizontal') {
-												setValue('priceVertical', null)
-												setValue('priceBoth', null)
-											}
-										}}
-										options={ORIENTATION_OPTIONS}
-										error={errors.orientation ? { message: errors.orientation.message ?? '' } : undefined}
-										placeholder="Seleziona orientamento"
+										onChange={(e) => field.onChange(e.target.value)}
+										options={CATEGORY_OPTIONS}
+										error={errors.category ? { message: errors.category.message ?? '' } : undefined}
+										placeholder="Seleziona categoria"
 									/>
 								)}
 							/>
-						</div>
-					</FormSection>
-
-					{/* Sezione: Durata */}
-					<FormSection title="Durata">
-						<div className="space-y-4">
-							<Input
-								label="Descrizione durata"
-								name="durationDescription"
-								{...register('durationDescription')}
-								error={errors.durationDescription}
-								placeholder="Es. 30–60 minuti"
+							<Controller
+								name="pricingType"
+								control={control}
+								render={({ field }) => (
+									<Select
+										label="Tipo tariffazione *"
+										name="pricingType"
+										value={field.value}
+										onChange={(e) => field.onChange(e.target.value)}
+										options={PRICING_TYPE_OPTIONS}
+										error={errors.pricingType ? { message: errors.pricingType.message ?? '' } : undefined}
+										placeholder="Seleziona tipo"
+									/>
+								)}
 							/>
-							<div className="grid grid-cols-2 gap-4">
-								<Input
-									label="Durata minima (min)"
-									name="minDuration"
-									type="number"
-									{...register('minDuration')}
-									error={errors.minDuration as any}
-								/>
-								<Input
-									label="Durata massima (min)"
-									name="maxDuration"
-									type="number"
-									{...register('maxDuration')}
-									error={errors.maxDuration as any}
+							<Input
+								label="Ordine visualizzazione"
+								type="number"
+								{...register('sortOrder')}
+								error={errors.sortOrder as any}
+								placeholder="Es. 1"
+							/>
+							<div className="flex items-end pb-1">
+								<Controller
+									name="isActive"
+									control={control}
+									render={({ field }) => (
+										<label className="flex items-center gap-2 cursor-pointer select-none">
+											<input
+												type="checkbox"
+												checked={field.value}
+												onChange={(e) => field.onChange(e.target.checked)}
+												className="w-4 h-4 accent-primary"
+											/>
+											<span className="text-sm font-medium text-gray-700">Servizio attivo</span>
+										</label>
+									)}
 								/>
 							</div>
 						</div>
-					</FormSection>
-
-					{/* Sezione: Prezzi — condizionale in base all'orientamento */}
-					<FormSection title="Prezzi">
-						<div className={`grid gap-4 ${orientation === 'both' ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'}`}>
-							{(orientation === 'vertical' || orientation === 'both') && (
+						{category === 'extra' && (
+							<div className="mt-4">
 								<Input
-									label={`Prezzo verticale (€)${orientation === 'both' ? '' : ' *'}`}
-									name="priceVertical"
-									type="number"
-									step="0.01"
-									{...register('priceVertical')}
-									error={errors.priceVertical as any}
+									label="Collegato al servizio (publicId)"
+									{...register('restrictedToService')}
+									error={errors.restrictedToService as any}
+									placeholder="Lascia vuoto per extra disponibile su tutti i servizi"
 								/>
-							)}
-							{(orientation === 'horizontal' || orientation === 'both') && (
-								<Input
-									label={`Prezzo orizzontale (€)${orientation === 'both' ? '' : ' *'}`}
-									name="priceHorizontal"
-									type="number"
-									step="0.01"
-									{...register('priceHorizontal')}
-									error={errors.priceHorizontal as any}
-								/>
-							)}
-							{orientation === 'both' && (
-								<Input
-									label="Prezzo entrambi (€)"
-									name="priceBoth"
-									type="number"
-									step="0.01"
-									{...register('priceBoth')}
-									error={errors.priceBoth as any}
-									placeholder="Es. prezzo bundle vantaggioso"
-								/>
-							)}
-						</div>
-						{orientation === 'both' && (
-							<p className="text-xs text-gray-500 mt-2">
-								Il prezzo "Entrambi" può essere inferiore alla somma dei singoli — il risparmio verrà evidenziato automaticamente all'utente.
-							</p>
+								<p className="text-xs text-gray-400 mt-1">
+									Compila solo se questo extra è disponibile esclusivamente per un singolo servizio principale.
+								</p>
+							</div>
 						)}
 					</FormSection>
 
-					{/* Sezione: Opzioni aggiuntive */}
-					<FormSection title="Opzioni aggiuntive" defaultOpen={false}>
-						<Textarea
-							label="Opzioni aggiuntive (JSON)"
-							name="additionalOptions"
-							rows={6}
-							{...register('additionalOptions')}
-							error={errors.additionalOptions}
-							placeholder='{"chiave": "valore"}'
-						/>
-					</FormSection>
+					{/* Prezzi */}
+					<FormSection title="Prezzi">
+						{pricingType === 'fixed' && (
+							<Input
+								label="Prezzo (€) *"
+								type="number"
+								step="0.01"
+								{...register('basePrice')}
+								error={errors.basePrice as any}
+								placeholder="Es. 350.00"
+							/>
+						)}
 
-					</form>
+						{pricingType === 'percentage' && (
+							<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+								<div>
+									<Input
+										label="Percentuale aggiuntiva (%) *"
+										type="number"
+										step="0.01"
+										{...register('percentageValue')}
+										error={errors.percentageValue as any}
+										placeholder="Es. 30"
+									/>
+									<p className="text-xs text-gray-400 mt-1">
+										Verrà applicata sul totale dei servizi selezionati.
+									</p>
+								</div>
+								<Input
+									label="Prezzo minimo (€)"
+									type="number"
+									step="0.01"
+									{...register('basePrice')}
+									error={errors.basePrice as any}
+									placeholder="Opzionale"
+								/>
+							</div>
+						)}
+
+						{pricingType === 'tiered' && (
+							<div className="space-y-3">
+								{tierFields.map((field, index) => (
+									<div key={field.id} className="flex gap-2 items-start">
+										<div className="flex-1">
+											<Input
+												label={index === 0 ? 'Etichetta fascia' : ''}
+												{...register(`priceTiers.${index}.label`)}
+												error={errors.priceTiers?.[index]?.label as any}
+												placeholder="Es. fino a 3h"
+											/>
+										</div>
+										<div className="w-28">
+											<Input
+												label={index === 0 ? 'Prezzo (€)' : ''}
+												type="number"
+												step="0.01"
+												{...register(`priceTiers.${index}.price`)}
+												error={errors.priceTiers?.[index]?.price as any}
+												placeholder="0.00"
+											/>
+										</div>
+										<button
+											type="button"
+											onClick={() => removeTier(index)}
+											className={`text-red-400 hover:text-red-600 p-2 flex-shrink-0 ${index === 0 ? 'mt-6' : ''}`}
+										>
+											<i className="fa-solid fa-trash text-sm" />
+										</button>
+									</div>
+								))}
+								{(errors.priceTiers as any)?.message && (
+									<p className="text-red-500 text-xs">{(errors.priceTiers as any).message}</p>
+								)}
+								<button
+									type="button"
+									onClick={() => appendTier({ label: '', price: 0 })}
+									className="btn secondary-wire text-sm"
+								>
+									<i className="fa-solid fa-plus mr-2" />
+									Aggiungi fascia
+								</button>
+							</div>
+						)}
+					</FormSection>
+				</form>
 			</div>
 		</div>
 	)

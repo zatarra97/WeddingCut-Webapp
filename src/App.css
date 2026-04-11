@@ -10,13 +10,13 @@
 	--color-secondary-light: #032b36;
 	--color-secondary-dark: #032b36;
 
-	/* User palette — cinematografica */
-	--color-user-primary: #8b6f4e;
-	--color-user-primary-light: #a6896a;
-	--color-user-primary-dark: #705838;
-	--color-user-bg: #f7f5f2;
+	/* User palette — viola */
+	--color-user-primary: #7c3aed;
+	--color-user-primary-light: #8b5cf6;
+	--color-user-primary-dark: #6d28d9;
+	--color-user-bg: #f5f3ff;
 	--color-user-navbar: #1a1a2e;
-	--color-user-accent: #c17c3e;
+	--color-user-accent: #8b5cf6;
 
 	/* Font Family */
 	--font-family-sans: "Sora", ui-sans-serif, system-ui, sans-serif;
@@ -170,9 +170,9 @@ input[type="number"]::-webkit-inner-spin-button {
 	@apply text-gray-700 text-sm md:text-base;
 }
 
-/* ── User area: override violet focus ring with brown ── */
+/* ── User area: focus ring violet ── */
 .user-area .form-input:focus {
-	border-color: #8b6f4e !important;
-	box-shadow: 0 0 0 1px #8b6f4e !important;
+	border-color: #7c3aed !important;
+	box-shadow: 0 0 0 1px #7c3aed !important;
 	outline: none !important;
 }

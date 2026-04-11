@@ -7,7 +7,6 @@ import AdminDashboard from './Pages/Admin/AdminDashboard'
 import Services from './Pages/Admin/Services/Services'
 import ServiceDetail from './Pages/Admin/Services/ServiceDetail'
 import NewOrder from './Pages/Orders/NewOrder'
-import OrderList from './Pages/Orders/OrderList'
 import OrderDetail from './Pages/Orders/OrderDetail'
 import AdminOrders from './Pages/Admin/Orders/AdminOrders'
 import AdminOrderDetail from './Pages/Admin/Orders/AdminOrderDetail'
@@ -168,7 +167,7 @@ const AppContent: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f7f5f2]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#8b6f4e] mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#7c3aed] mx-auto mb-4"></div>
           <p className="text-gray-600">Recupero informazioni autenticazione</p>
         </div>
       </div>
@@ -227,7 +226,6 @@ const AppContent: React.FC = () => {
           <ToastContainer />
           <Routes>
             <Route path="/user/dashboard" element={<ProtectedRoute requiredRole={USER_ROLES.USER}><Dashboard /></ProtectedRoute>} />
-            <Route path="/user/orders" element={<ProtectedRoute requiredRole={USER_ROLES.USER}><OrderList /></ProtectedRoute>} />
             <Route path="/user/orders/new" element={<ProtectedRoute requiredRole={USER_ROLES.USER}><NewOrder /></ProtectedRoute>} />
             <Route path="/user/orders/:publicId" element={<ProtectedRoute requiredRole={USER_ROLES.USER}><OrderDetail /></ProtectedRoute>} />
             <Route path="/user/messages" element={<ProtectedRoute requiredRole={USER_ROLES.USER}><MessageList /></ProtectedRoute>} />

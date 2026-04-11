@@ -12,10 +12,10 @@ export default function NotFound() {
             {/* Contenuto principale */}
             <div className="relative">
               <div className="mb-8">
-                <div className="inline-block p-4 rounded-full bg-[#8b6f4e]/20 mb-6">
+                <div className="inline-block p-4 rounded-full bg-[#7c3aed]/20 mb-6">
                   <FontAwesomeIcon
                     icon={faExclamationTriangle}
-                    className="text-[#8b6f4e] text-6xl"
+                    className="text-[#7c3aed] text-6xl"
                   />
                 </div>
                 <h1 className="text-5xl font-bold text-slate-900 mb-4">
@@ -31,7 +31,7 @@ export default function NotFound() {
 
               <Link 
                 to="/"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-[#8b6f4e] hover:bg-[#705838] text-white font-semibold rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-[#8b6f4e]/25"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-[#7c3aed] hover:bg-[#6d28d9] text-white font-semibold rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-[#7c3aed]/25"
               >
                 <FontAwesomeIcon icon={faHome} className="text-lg" />
                 <span>Torna alla home</span>

@@ -296,6 +296,30 @@ export const genericPost = async (endpoint: string, data: any = {}): Promise<any
 // ---------------------------------------------------------------------------
 // API — presigned URL (S3)
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// API — Fattura ordine (upload/download/delete su S3)
+// ---------------------------------------------------------------------------
+export const getInvoiceUploadUrl = async (
+	orderId: string,
+	filename: string,
+	contentType: string,
+): Promise<{ uploadUrl: string; invoiceUrl: string }> => {
+	return await genericPost(`admin/orders/${orderId}/invoice-upload-url`, { filename, contentType })
+}
+
+export const uploadFileToS3 = async (uploadUrl: string, file: File): Promise<void> => {
+	await axios.put(uploadUrl, file, { headers: { "Content-Type": file.type } })
+}
+
+export const getInvoiceDownloadUrl = async (orderId: string): Promise<string> => {
+	const data = await genericGet(`admin/orders/${orderId}/invoice-download-url`)
+	return data.downloadUrl
+}
+
+export const deleteInvoice = async (orderId: string): Promise<void> => {
+	await apiClient.delete(`${import.meta.env.VITE_BACKEND_URL}/admin/orders/${orderId}/invoice`)
+}
+
 export const getPresignedUrl = async (
 	entity: string,
 	id: string | number,

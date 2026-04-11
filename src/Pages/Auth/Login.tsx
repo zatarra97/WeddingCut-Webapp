@@ -287,7 +287,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, onForgotPassword, loadin
 				<button
 					type="button"
 					onClick={onForgotPassword}
-					className="block w-full text-sm text-slate-500 hover:text-[#8b6f4e] transition-colors cursor-pointer"
+					className="block w-full text-sm text-slate-500 hover:text-[#7c3aed] transition-colors cursor-pointer"
 					disabled={loading}
 				>
 					Ho dimenticato la password
@@ -296,7 +296,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, onForgotPassword, loadin
 					to="/accesso/registrati"
 					className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-[#1a1a2e] transition-colors"
 				>
-					Non hai un account? <span className="text-[#8b6f4e]">Registrati</span>
+					Non hai un account? <span className="text-[#7c3aed]">Registrati</span>
 				</Link>
 			</div>
 		</div>
@@ -349,7 +349,7 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onSendCode, onB
 			<button
 				type="button"
 				onClick={onBackToLogin}
-				className="w-full text-sm text-slate-500 hover:text-[#8b6f4e] flex items-center justify-center gap-1.5 transition-colors"
+				className="w-full text-sm text-slate-500 hover:text-[#7c3aed] flex items-center justify-center gap-1.5 transition-colors"
 				disabled={loading}
 			>
 				<i className="fas fa-arrow-left" /> Torna al login
@@ -423,7 +423,7 @@ const ConfirmCodeForm: React.FC<ConfirmCodeFormProps> = ({ onConfirmCode, onBack
 			<button
 				type="button"
 				onClick={onBackToForgotPassword}
-				className="w-full text-sm text-slate-500 hover:text-[#8b6f4e] flex items-center justify-center gap-1.5 transition-colors"
+				className="w-full text-sm text-slate-500 hover:text-[#7c3aed] flex items-center justify-center gap-1.5 transition-colors"
 				disabled={loading}
 			>
 				<i className="fas fa-arrow-left" /> Richiedi nuovo codice

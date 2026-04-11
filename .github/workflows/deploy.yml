@@ -1,49 +1,65 @@
-name: Deploy Frontend
+name: Deploy Frontend → S3 + CloudFront
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+concurrency:
+  group: weddingcut-frontend-deploy
+  cancel-in-progress: true
 
 jobs:
   deploy:
-    name: Build & Deploy to S3 + CloudFront
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: npm
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
 
-      - name: Install & Build
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Build
+        run: npm run build
         env:
-          VITE_ENVIRONMENT: production
+          NODE_ENV: production
           VITE_APP_NAME: WeddingCut
-          VITE_AWS_REGION: eu-north-1
-          VITE_COGNITO_USER_POOL_ID: eu-north-1_zEPFcP8zc
-          VITE_COGNITO_CLIENT_ID: 6mp5u5f1tkfdudhabj7jdho7c2
-          VITE_BACKEND_URL: ${{ vars.API_GATEWAY_URL }}
-          VITE_ROLLBAR_TOKEN: ""
-          VITE_GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-        run: |
-          npm ci
-          npm run build
+          VITE_ENVIRONMENT: production
+          VITE_AWS_REGION: ${{ secrets.VITE_AWS_REGION }}
+          VITE_COGNITO_USER_POOL_ID: ${{ secrets.VITE_COGNITO_USER_POOL_ID }}
+          VITE_COGNITO_CLIENT_ID: ${{ secrets.VITE_COGNITO_CLIENT_ID }}
+          VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
+          VITE_ROLLBAR_TOKEN: ${{ secrets.VITE_ROLLBAR_TOKEN }}
 
-      - name: Deploy to S3
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: eu-north-1
-        run: |
-          aws s3 sync build s3://${{ vars.S3_BUCKET_NAME }} --delete
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-north-1
 
-      - name: Invalidate CloudFront
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: us-east-1
+      - name: Sync build → S3
+        run: |
+          aws s3 sync ./build s3://${{ secrets.S3_BUCKET_NAME }} \
+            --delete \
+            --cache-control "public, max-age=31536000, immutable" \
+            --exclude "index.html"
+
+          aws s3 cp ./build/index.html s3://${{ secrets.S3_BUCKET_NAME }}/index.html \
+            --cache-control "no-cache, no-store, must-revalidate"
+
+      - name: Invalidate CloudFront cache
         run: |
           aws cloudfront create-invalidation \
-            --distribution-id ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
             --paths "/*"
