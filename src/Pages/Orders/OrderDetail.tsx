@@ -136,6 +136,14 @@ const OrderDetail = () => {
 	const { publicId } = useParams<{ publicId: string }>()
 	const [order, setOrder] = useState<Order | null>(null)
 	const [loading, setLoading] = useState(true)
+	const [openEntries, setOpenEntries] = useState<Set<string>>(new Set())
+
+	const toggleEntry = (id: string) =>
+		setOpenEntries((prev) => {
+			const next = new Set(prev)
+			next.has(id) ? next.delete(id) : next.add(id)
+			return next
+		})
 
 	useEffect(() => {
 		if (!publicId) return
@@ -271,21 +279,29 @@ const OrderDetail = () => {
 							)}
 						</div>
 
-						{/* Matrimoni inclusi (solo batch) — con servizi per-entry */}
+						{/* Matrimoni inclusi (solo batch) — accordion per-entry */}
 						{isBatch && order.entries && (
 							<div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 md:p-8 space-y-4">
 								<div>
 									<h2 className="text-lg font-semibold text-gray-900">Matrimoni inclusi</h2>
 									<p className="text-sm text-gray-500 mt-0.5">{order.entries.length} matrimoni in questo ordine.</p>
 								</div>
-								<div className="space-y-4">
+								<div className="space-y-3">
 									{order.entries.map((entry) => {
+										const isOpen = openEntries.has(entry.publicId)
 										const entrySvcs = parseServices((entry.selectedServices ?? null) as StoredService[] | string | null)
+										const entryMainSvcs = entrySvcs.filter((s) => s.pricingType !== "percentage")
+										const entryDeliverySvcs = entrySvcs.filter((s) => s.pricingType === "percentage")
 										const entryTot = entry.totalPrice != null ? Number(entry.totalPrice) : null
+										const hasExport = entry.exportFps || entry.exportBitrate || entry.exportAspect || entry.exportResolution
 										return (
 											<div key={entry.publicId} className="rounded-lg border border-gray-200 overflow-hidden">
-												{/* Header entry */}
-												<div className="flex flex-wrap items-center gap-3 px-4 py-3 bg-gray-50 border-b border-gray-200">
+												{/* Header — cliccabile */}
+												<button
+													type="button"
+													onClick={() => toggleEntry(entry.publicId)}
+													className="w-full flex items-center gap-3 px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left cursor-pointer"
+												>
 													<div className="flex-1 min-w-0">
 														<p className="font-semibold text-gray-900 text-sm">{entry.coupleName}</p>
 														<p className="text-xs text-gray-500 mt-0.5">
@@ -294,34 +310,168 @@ const OrderDetail = () => {
 														</p>
 													</div>
 													{entryTot != null && (
-														<span className="text-sm font-bold text-[#7c3aed]">€{entryTot.toFixed(2)}</span>
+														<span className="text-sm font-bold text-[#7c3aed] shrink-0">€{entryTot.toFixed(2)}</span>
 													)}
-												</div>
-												{/* Servizi entry */}
-												{entrySvcs.length > 0 && (
-													<div className="px-4 py-3 space-y-1.5">
-														{entrySvcs.map((svc) => (
-															<div key={svc.publicId} className="flex justify-between items-start text-sm gap-2">
-																<span className="text-gray-700 leading-snug">
-																	{svc.name}
-																	{svc.tierLabel && (
-																		<span className="block text-xs text-gray-400">
-																			{svc.tierLabel}
-																			{svc.duration != null && ` · ${formatDuration(svc.duration)}`}
-																		</span>
-																	)}
-																</span>
-																<span className="font-medium text-gray-900 shrink-0 text-xs">
-																	{svc.pricingType === "percentage"
-																		? <span className="text-[#7c3aed]">+{svc.percentageValue}%{svc.price != null && svc.price > 0 ? ` (€${Number(svc.price).toFixed(2)})` : ""}</span>
-																		: svc.price != null ? `€${Number(svc.price).toFixed(2)}` : "—"}
-																</span>
+													<i className={`fa-solid fa-chevron-${isOpen ? "up" : "down"} text-xs text-gray-400 shrink-0`} aria-hidden />
+												</button>
+
+												{/* Corpo accordion */}
+												{isOpen && (
+													<div className="px-4 py-4 space-y-5 border-t border-gray-100">
+
+														{/* Servizi */}
+														{entrySvcs.length > 0 ? (
+															<div className="space-y-4">
+																<p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Servizi</p>
+
+																{entryMainSvcs.length > 0 && (
+																	<div className="space-y-2">
+																		{entryMainSvcs.map((svc) => (
+																			<div key={svc.publicId} className="rounded-lg border border-[#ddd6fe] bg-[#f5f3ff] p-3">
+																				<div className="flex items-start gap-2">
+																					<i className="fa-solid fa-circle-check text-[#7c3aed] mt-0.5 shrink-0" aria-hidden />
+																					<div className="flex-1 min-w-0">
+																						<span className="font-semibold text-gray-900 text-sm">{svc.name}</span>
+																						{svc.tierLabel && (
+																							<p className="text-xs text-[#6d28d9] mt-0.5">
+																								{svc.tierLabel}
+																								{svc.duration != null && ` · ${formatDuration(svc.duration)}`}
+																							</p>
+																						)}
+																						{svc.pricingType === "fixed" && svc.price != null && (
+																							<p className="text-xs font-semibold text-[#6d28d9] mt-0.5">€{Number(svc.price).toFixed(2)}</p>
+																						)}
+																						{svc.notes && (
+																							<p className="text-xs text-gray-600 mt-1 bg-white rounded border border-gray-200 px-2 py-1">{svc.notes}</p>
+																						)}
+																					</div>
+																				</div>
+																			</div>
+																		))}
+																	</div>
+																)}
+
+																{entryDeliverySvcs.length > 0 && (
+																	<div className="space-y-2">
+																		{entryDeliverySvcs.map((svc) => (
+																			<div key={svc.publicId} className="rounded-lg border border-[#ddd6fe] bg-[#f5f3ff] p-3">
+																				<div className="flex items-start gap-2">
+																					<i className="fa-solid fa-circle-check text-[#7c3aed] mt-0.5 shrink-0" aria-hidden />
+																					<div className="flex-1">
+																						<span className="font-semibold text-gray-900 text-sm">{svc.name}</span>
+																						<p className="text-xs text-[#6d28d9] mt-0.5">
+																							+{svc.percentageValue}%
+																							{svc.price != null && svc.price > 0 && ` = €${Number(svc.price).toFixed(2)}`}
+																						</p>
+																					</div>
+																				</div>
+																			</div>
+																		))}
+																	</div>
+																)}
+
+																{entry.cameraSurcharge != null && Number(entry.cameraSurcharge) > 0 && (
+																	<div className="flex justify-between items-center text-sm py-1">
+																		<span className="text-gray-500 text-xs">Supplemento multi-camera ({entry.cameraCount})</span>
+																		<span className="font-medium text-orange-600 text-xs">+€{Number(entry.cameraSurcharge).toFixed(2)}</span>
+																	</div>
+																)}
 															</div>
-														))}
-														{entry.cameraSurcharge != null && Number(entry.cameraSurcharge) > 0 && (
-															<div className="flex justify-between items-center text-sm gap-2">
-																<span className="text-gray-500 text-xs">Supplemento multi-camera ({entry.cameraCount})</span>
-																<span className="font-medium text-orange-600 shrink-0 text-xs">+€{Number(entry.cameraSurcharge).toFixed(2)}</span>
+														) : (
+															<p className="text-xs text-gray-400 italic">Nessun servizio.</p>
+														)}
+
+														{/* Materiale */}
+														{(entry.deliveryMethod || entry.materialSizeGb != null) && (
+															<div className="space-y-2">
+																<p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Materiale</p>
+																<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+																	{(["cloud_link", "upload_request"] as const).map((method) => {
+																		const active = entry.deliveryMethod === method
+																		const icon = method === "cloud_link" ? "fa-cloud" : "fa-cloud-arrow-up"
+																		const title = method === "cloud_link" ? "Ho già caricato il materiale" : "Richiedi link di caricamento"
+																		return (
+																			<div key={method} className={`flex items-center gap-2 p-3 rounded-lg border-2 text-sm ${active ? "border-[#7c3aed] bg-[#f5f3ff]" : "border-gray-200 opacity-40"}`}>
+																				<i className={`fa-solid ${icon} ${active ? "text-[#7c3aed]" : "text-gray-400"}`} aria-hidden />
+																				<span className={active ? "text-[#6d28d9] font-medium" : "text-gray-600"}>{title}</span>
+																			</div>
+																		)
+																	})}
+																</div>
+																{entry.deliveryMethod === "cloud_link" && entry.materialLink && (
+																	<div>
+																		<p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Link cartella cloud</p>
+																		<a href={entry.materialLink} target="_blank" rel="noopener noreferrer" className="text-sm text-[#7c3aed] underline break-all">{entry.materialLink}</a>
+																	</div>
+																)}
+																{entry.materialSizeGb != null && (
+																	<p className="text-sm text-gray-700">
+																		<span className="font-medium">Dimensione:</span> {entry.materialSizeGb} GB
+																	</p>
+																)}
+															</div>
+														)}
+
+														{/* Telecamere */}
+														{entry.cameraCount && (
+															<div className="space-y-2">
+																<p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Telecamere</p>
+																<div className="flex gap-2">
+																	{CAMERA_OPTIONS.map((opt) => {
+																		const active = entry.cameraCount === opt.value
+																		return (
+																			<div key={opt.value} className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg border-2 text-center ${active ? "border-[#7c3aed] bg-[#f5f3ff]" : "border-gray-200 opacity-40"}`}>
+																				<i className={`fa-solid fa-video text-lg ${active ? "text-[#7c3aed]" : "text-gray-400"}`} aria-hidden />
+																				<span className={`font-semibold text-sm ${active ? "text-[#6d28d9]" : "text-gray-900"}`}>{opt.label}</span>
+																				{opt.surcharge > 0
+																					? <span className={`text-xs ${active ? "text-[#7c3aed]" : "text-orange-500"}`}>+€{opt.surcharge}</span>
+																					: <span className="text-xs text-gray-400">Incluso</span>
+																				}
+																			</div>
+																		)
+																	})}
+																</div>
+															</div>
+														)}
+
+														{/* Esportazione */}
+														{hasExport && (
+															<div className="space-y-2">
+																<p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Esportazione</p>
+																<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+																	{entry.exportFps && (
+																		<div>
+																			<p className="text-xs text-gray-400 mb-0.5">FPS</p>
+																			<p className="font-medium text-gray-800">{EXPORT_FPS_LABELS[entry.exportFps] ?? entry.exportFps}</p>
+																		</div>
+																	)}
+																	{entry.exportBitrate && (
+																		<div>
+																			<p className="text-xs text-gray-400 mb-0.5">Bitrate</p>
+																			<p className="font-medium text-gray-800">{EXPORT_BITRATE_LABELS[entry.exportBitrate] ?? entry.exportBitrate}</p>
+																		</div>
+																	)}
+																	{entry.exportAspect && (
+																		<div>
+																			<p className="text-xs text-gray-400 mb-0.5">Formato</p>
+																			<p className="font-medium text-gray-800">{EXPORT_ASPECT_LABELS[entry.exportAspect] ?? entry.exportAspect}</p>
+																		</div>
+																	)}
+																	{entry.exportResolution && (
+																		<div>
+																			<p className="text-xs text-gray-400 mb-0.5">Risoluzione</p>
+																			<p className="font-medium text-gray-800">{EXPORT_RESOLUTION_LABELS[entry.exportResolution] ?? entry.exportResolution}</p>
+																		</div>
+																	)}
+																</div>
+															</div>
+														)}
+
+														{/* Totale entry */}
+														{entryTot != null && (
+															<div className="border-t border-gray-100 pt-3 flex justify-between font-semibold text-sm">
+																<span className="text-gray-700">Totale matrimonio</span>
+																<span className="text-[#7c3aed]">€{entryTot.toFixed(2)}</span>
 															</div>
 														)}
 													</div>
