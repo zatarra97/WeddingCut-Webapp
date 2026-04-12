@@ -820,7 +820,14 @@ const AdminOrderDetail = () => {
 											onChange={(e) => setAdminStatus(e.target.value)}
 											className={`block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500 ${STATUS_CLASSES[adminStatus] ?? ""}`}
 										>
-											{STATUS_OPTIONS.map((o) => (
+											{[
+												{ value: "quote_ready",      label: "Preventivo inviato" },
+												{ value: "in_progress",      label: "In lavorazione" },
+												{ value: "under_review",     label: "In revisione" },
+												{ value: "awaiting_payment", label: "In attesa di pagamento" },
+												{ value: "completed",        label: "Completato" },
+												{ value: "cancelled",        label: "Annullato" },
+											].map((o) => (
 												<option key={o.value} value={o.value}>{o.label}</option>
 											))}
 										</select>
