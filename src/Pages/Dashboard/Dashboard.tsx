@@ -51,6 +51,7 @@ const Dashboard = () => {
 	const [loading, setLoading] = useState(true)
 	const [search, setSearch] = useState("")
 	const [sortAsc, setSortAsc] = useState(true)
+	const [tabDropdownOpen, setTabDropdownOpen] = useState(false)
 
 	useEffect(() => {
 		genericGet("user/orders")
@@ -83,30 +84,80 @@ const Dashboard = () => {
 
 	return (
 		<div className="min-h-[calc(100vh-64px)]">
-			{/* Tab bar */}
-			<nav className="sticky top-28 z-30 h-12 bg-[#7c3aed] text-white shadow-sm">
-				<div className="container mx-auto flex items-center gap-1 px-4 md:px-6 pt-2">
-				{TABS.map((tab) => (
-					<button
-						key={tab.key}
-						type="button"
-						onClick={() => setActiveTab(tab.key)}
-						className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
-							activeTab === tab.key ? "bg-[#6d28d9] text-white" : "text-white/80 hover:bg-[#6d28d9]/50"
-						}`}
-					>
-						{tab.label}
-						{!loading && (
-							<span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${
-								activeTab === tab.key ? "bg-white/20 text-white" : "bg-white/10 text-white/70"
-							}`}>
-								{countFor(tab.statusFilter)}
-							</span>
-						)}
-					</button>
-				))}
+			{/* Tab bar — desktop */}
+			<nav className="sticky top-28 z-30 h-12 bg-[#7c3aed] text-white shadow-sm hidden md:block">
+				<div className="container mx-auto flex items-center gap-1 px-6 pt-2">
+					{TABS.map((tab) => (
+						<button
+							key={tab.key}
+							type="button"
+							onClick={() => setActiveTab(tab.key)}
+							className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+								activeTab === tab.key ? "bg-[#6d28d9] text-white" : "text-white/80 hover:bg-[#6d28d9]/50"
+							}`}
+						>
+							{tab.label}
+							{!loading && (
+								<span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${
+									activeTab === tab.key ? "bg-white/20 text-white" : "bg-white/10 text-white/70"
+								}`}>
+									{countFor(tab.statusFilter)}
+								</span>
+							)}
+						</button>
+					))}
 				</div>
 			</nav>
+
+			{/* Tab dropdown — mobile */}
+			<div className="md:hidden sticky top-28 z-30 bg-[#7c3aed] shadow-sm px-4 py-2">
+				<div className="relative">
+					<button
+						type="button"
+						onClick={() => setTabDropdownOpen((v) => !v)}
+						className="w-full flex items-center justify-between gap-2 px-4 py-2.5 rounded-lg bg-[#6d28d9] text-white text-sm font-medium cursor-pointer"
+					>
+						<span className="flex items-center gap-2">
+							{activeTabDef.label}
+							{!loading && (
+								<span className="text-xs px-1.5 py-0.5 rounded-full bg-white/20 font-semibold">
+									{countFor(activeTabDef.statusFilter)}
+								</span>
+							)}
+						</span>
+						<i className={`fa-solid fa-chevron-${tabDropdownOpen ? "up" : "down"} text-xs text-white/70`} aria-hidden />
+					</button>
+
+					{tabDropdownOpen && (
+						<>
+							<div className="fixed inset-0 z-40" onClick={() => setTabDropdownOpen(false)} />
+							<div className="absolute top-full left-0 right-0 mt-1 z-50 bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden">
+								{TABS.map((tab) => (
+									<button
+										key={tab.key}
+										type="button"
+										onClick={() => { setActiveTab(tab.key); setTabDropdownOpen(false) }}
+										className={`w-full flex items-center justify-between px-4 py-3 text-sm font-medium transition-colors cursor-pointer ${
+											activeTab === tab.key
+												? "bg-[#f5f3ff] text-[#7c3aed]"
+												: "text-gray-700 hover:bg-gray-50"
+										}`}
+									>
+										<span>{tab.label}</span>
+										{!loading && (
+											<span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+												activeTab === tab.key ? "bg-[#ede9fe] text-[#7c3aed]" : "bg-gray-100 text-gray-500"
+											}`}>
+												{countFor(tab.statusFilter)}
+											</span>
+										)}
+									</button>
+								))}
+							</div>
+						</>
+					)}
+				</div>
+			</div>
 
 			{/* Main content */}
 			<div className="container mx-auto p-4 md:p-6 relative">
