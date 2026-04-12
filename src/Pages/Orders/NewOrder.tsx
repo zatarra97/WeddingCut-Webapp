@@ -196,6 +196,7 @@ const NewOrder = () => {
 	const [services,        setServices]        = useState<PublicService[]>([])
 	const [loadingServices, setLoadingServices] = useState(true)
 	const [submitting,      setSubmitting]      = useState(false)
+	const [confirmDeleteIdx, setConfirmDeleteIdx] = useState<number | null>(null)
 
 	useEffect(() => {
 		genericGet("user/services")
@@ -233,6 +234,17 @@ const NewOrder = () => {
 		const next = entries.filter((_, i) => i !== idx)
 		setEntries(next)
 		setSelectedIdx(Math.min(selectedIdx, next.length - 1))
+		setConfirmDeleteIdx(null)
+	}
+
+	const moveEntry = (idx: number, dir: "up" | "down") => {
+		const newIdx = dir === "up" ? idx - 1 : idx + 1
+		if (newIdx < 0 || newIdx >= entries.length) return
+		const next = [...entries]
+		;[next[idx], next[newIdx]] = [next[newIdx], next[idx]]
+		setEntries(next)
+		if (selectedIdx === idx) setSelectedIdx(newIdx)
+		else if (selectedIdx === newIdx) setSelectedIdx(idx)
 	}
 
 	// ─── Helpers selezione servizi ────────────────────────────────────────────
@@ -551,30 +563,33 @@ const NewOrder = () => {
 
 	// ─── Sezione config per-entry (usata sia nel pannello centro che nella colonna sinistra singola) ───
 
-	const renderEntryConfig = () => (
-		<>
-			{/* Nome coppia + data matrimonio */}
-			<div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 md:p-8">
-				<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-					<div className="sm:col-span-2 sm:col-span-1">
-						<Input
-							name={`coupleName-${selectedIdx}`}
-							type="text"
-							label="Nomi della coppia *"
-							value={currentEntry.coupleName}
-							onChange={(e) => updateCurrentEntry("coupleName", e.target.value)}
-							placeholder="Es. Mario e Laura"
-						/>
-					</div>
-					<div>
-						<DateTimePicker
-							label="Data del matrimonio *"
-							value={currentEntry.weddingDate || null}
-							onChange={(date) => updateCurrentEntry("weddingDate", date ?? "")}
-						/>
-					</div>
+	const renderCoupleHeader = () => (
+		<div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
+			<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+				<div>
+					<Input
+						name={`coupleName-${selectedIdx}`}
+						type="text"
+						label="Nomi della coppia *"
+						value={currentEntry.coupleName}
+						onChange={(e) => updateCurrentEntry("coupleName", e.target.value)}
+						placeholder="Es. Mario e Laura"
+					/>
+				</div>
+				<div>
+					<DateTimePicker
+						label="Data del matrimonio *"
+						value={currentEntry.weddingDate || null}
+						onChange={(date) => updateCurrentEntry("weddingDate", date ?? "")}
+					/>
 				</div>
 			</div>
+		</div>
+	)
+
+	const renderEntryConfig = (showCoupleHeader = true) => (
+		<>
+			{showCoupleHeader && renderCoupleHeader()}
 
 			{/* Selezione servizi */}
 			<div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 md:p-8 space-y-4">
@@ -768,18 +783,8 @@ const NewOrder = () => {
 						</div>
 					</>
 				) : (
-					/* In modalità singola: dettaglio servizi */
+					/* In modalità singola: dettaglio servizi (coppia/data vengono dai campi in cima) */
 					<>
-						{currentEntry.coupleName && (
-							<div className="text-sm text-gray-700">
-								<span className="font-medium">Coppia:</span> {currentEntry.coupleName}
-							</div>
-						)}
-						{currentEntry.weddingDate && (
-							<div className="text-sm text-gray-700">
-								<span className="font-medium">Matrimonio:</span> {formatDate(currentEntry.weddingDate)}
-							</div>
-						)}
 
 						{currentEntry.selectedServices.length > 0 ? (
 							<>
@@ -881,12 +886,17 @@ const NewOrder = () => {
 						<div className="flex flex-col xl:flex-row gap-4 xl:gap-5">
 
 							{/* Pannello sinistro: lista matrimoni */}
-							<aside className="xl:w-64 shrink-0">
-								<div className="xl:sticky xl:top-24 rounded-xl border border-gray-200 bg-white shadow-sm p-4 flex flex-col gap-2">
-									<h2 className="text-base font-bold text-gray-900 mb-1">
-										<i className="fa-solid fa-layer-group text-[#7c3aed] mr-2" />
-										Matrimoni
-									</h2>
+							<aside className="xl:w-80 shrink-0">
+								<div className="xl:sticky xl:top-24 rounded-xl border border-gray-200 bg-white shadow-sm p-4 flex flex-col gap-3">
+									<div>
+										<h2 className="text-base font-bold text-gray-900">
+											<i className="fa-solid fa-layer-group text-[#7c3aed] mr-2" />
+											Matrimoni
+										</h2>
+										<p className="text-xs text-gray-400 mt-1 leading-relaxed">
+											L'ordine con cui sono visualizzati i matrimoni definisce lo stesso ordine di priorità che avremo durante il montaggio.
+										</p>
+									</div>
 									{entries.map((e, i) => {
 										const tot = calcEntryTotal(e, services)
 										const isActive = i === selectedIdx
@@ -896,33 +906,59 @@ const NewOrder = () => {
 												onClick={() => setSelectedIdx(i)}
 												className={`relative p-3 rounded-lg border-2 cursor-pointer transition-all ${isActive ? "border-[#7c3aed] bg-[#f5f3ff]" : "border-gray-200 hover:border-gray-300"}`}
 											>
-												<div className={`font-medium text-sm truncate ${isActive ? "text-[#6d28d9]" : "text-gray-800"}`}>
+												{/* Frecce riordino */}
+												<div className="absolute top-2 right-2 flex flex-col gap-0.5">
+													<button
+														type="button"
+														onClick={(ev) => { ev.stopPropagation(); moveEntry(i, "up") }}
+														disabled={i === 0}
+														className="w-5 h-5 flex items-center justify-center rounded text-gray-300 hover:text-[#7c3aed] hover:bg-[#ede9fe] disabled:opacity-20 disabled:cursor-not-allowed transition-colors cursor-pointer"
+														title="Sposta su"
+													>
+														<i className="fa-solid fa-chevron-up text-[10px]" />
+													</button>
+													<button
+														type="button"
+														onClick={(ev) => { ev.stopPropagation(); moveEntry(i, "down") }}
+														disabled={i === entries.length - 1}
+														className="w-5 h-5 flex items-center justify-center rounded text-gray-300 hover:text-[#7c3aed] hover:bg-[#ede9fe] disabled:opacity-20 disabled:cursor-not-allowed transition-colors cursor-pointer"
+														title="Sposta giù"
+													>
+														<i className="fa-solid fa-chevron-down text-[10px]" />
+													</button>
+												</div>
+
+												<div className={`font-medium text-sm truncate pr-8 ${isActive ? "text-[#6d28d9]" : "text-gray-800"}`}>
 													{e.coupleName || <span className="italic text-gray-400">Matrimonio {i + 1}</span>}
 												</div>
 												{e.weddingDate && (
-													<div className="text-xs text-gray-400 mt-0.5 truncate">{formatDate(e.weddingDate)}</div>
+													<div className="text-xs text-gray-400 mt-0.5 truncate">
+														<i className="fa-solid fa-ring text-[8px] mr-1 text-[#c4b5fd]" />
+														{formatDate(e.weddingDate)}
+													</div>
 												)}
-												<div className={`text-sm font-bold mt-1 ${isActive ? "text-[#7c3aed]" : "text-gray-600"}`}>
+												<div className={`text-sm font-bold mt-1 mb-2 ${isActive ? "text-[#7c3aed]" : "text-gray-600"}`}>
 													€{tot.toFixed(2)}
 												</div>
+
 												{/* Azioni */}
-												<div className="flex gap-1 mt-2">
+												<div className="flex gap-2">
 													<button
 														type="button"
 														onClick={(ev) => { ev.stopPropagation(); duplicateEntry(i) }}
-														title="Duplica"
-														className="flex items-center gap-1 text-xs text-gray-400 hover:text-[#7c3aed] transition-colors cursor-pointer"
+														className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md border border-[#c4b5fd] bg-white text-[#7c3aed] text-xs font-medium hover:bg-[#f5f3ff] transition-colors cursor-pointer"
 													>
-														<i className="fa-solid fa-copy" />
+														<i className="fa-solid fa-copy text-[10px]" />
+														Duplica
 													</button>
 													{entries.length > 1 && (
 														<button
 															type="button"
-															onClick={(ev) => { ev.stopPropagation(); removeEntry(i) }}
-															title="Rimuovi"
-															className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 transition-colors cursor-pointer ml-2"
+															onClick={(ev) => { ev.stopPropagation(); setConfirmDeleteIdx(i) }}
+															className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md border border-red-200 bg-white text-red-500 text-xs font-medium hover:bg-red-50 transition-colors cursor-pointer"
 														>
-															<i className="fa-solid fa-trash" />
+															<i className="fa-solid fa-trash text-[10px]" />
+															Elimina
 														</button>
 													)}
 												</div>
@@ -932,7 +968,7 @@ const NewOrder = () => {
 									<button
 										type="button"
 										onClick={addEntry}
-										className="mt-1 w-full py-2 rounded-lg border border-dashed border-[#c4b5fd] text-[#7c3aed] text-sm font-medium hover:bg-[#f5f3ff] transition-colors cursor-pointer flex items-center justify-center gap-1"
+										className="w-full py-2 rounded-lg border border-dashed border-[#c4b5fd] text-[#7c3aed] text-sm font-medium hover:bg-[#f5f3ff] transition-colors cursor-pointer flex items-center justify-center gap-1"
 									>
 										<i className="fa-solid fa-plus text-xs" />
 										Aggiungi matrimonio
@@ -990,12 +1026,8 @@ const NewOrder = () => {
 
 							{/* Colonna sinistra */}
 							<section className="flex-1 max-w-4xl space-y-6">
-								<div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 md:p-8">
-									<div className="flex flex-wrap items-center justify-between gap-3 mb-5">
-										<h1 className="text-2xl font-bold text-[#6d28d9]">Nuovo progetto</h1>
-									</div>
-									{renderEntryConfig()}
-								</div>
+								<h1 className="text-2xl font-bold text-[#6d28d9]">Nuovo progetto</h1>
+								{renderEntryConfig(false)}
 
 								{/* Note */}
 								<div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 md:p-8 space-y-4">
@@ -1029,9 +1061,10 @@ const NewOrder = () => {
 								</button>
 							</section>
 
-							{/* Colonna destra: riepilogo */}
+							{/* Colonna destra: coppia/data + riepilogo */}
 							<aside className="lg:w-80 shrink-0">
-								<div className="lg:sticky lg:top-24">
+								<div className="lg:sticky lg:top-24 space-y-4">
+									{renderCoupleHeader()}
 									{renderSummaryPanel(false)}
 								</div>
 							</aside>
@@ -1042,6 +1075,45 @@ const NewOrder = () => {
 						WeddingCut
 					</div>
 				</div>
+
+				{/* Modal conferma eliminazione */}
+				{confirmDeleteIdx !== null && (
+					<div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+						<div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setConfirmDeleteIdx(null)} />
+						<div className="relative bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
+							<div className="flex items-center gap-3 mb-4">
+								<div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+									<i className="fa-solid fa-trash text-red-500" />
+								</div>
+								<div>
+									<p className="font-semibold text-gray-900 text-sm">Elimina matrimonio</p>
+									<p className="text-xs text-gray-500 mt-0.5">
+										{entries[confirmDeleteIdx]?.coupleName
+											? `Stai per eliminare "${entries[confirmDeleteIdx].coupleName}".`
+											: `Stai per eliminare il matrimonio ${confirmDeleteIdx + 1}.`}
+									</p>
+								</div>
+							</div>
+							<p className="text-sm text-gray-600 mb-5">Questa operazione non può essere annullata. Tutti i dati configurati per questo matrimonio andranno persi.</p>
+							<div className="flex gap-3">
+								<button
+									type="button"
+									onClick={() => setConfirmDeleteIdx(null)}
+									className="flex-1 py-2 rounded-lg border border-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors cursor-pointer"
+								>
+									Annulla
+								</button>
+								<button
+									type="button"
+									onClick={() => removeEntry(confirmDeleteIdx)}
+									className="flex-1 py-2 rounded-lg bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors cursor-pointer"
+								>
+									Elimina
+								</button>
+							</div>
+						</div>
+					</div>
+				)}
 			</form>
 		</div>
 	)
