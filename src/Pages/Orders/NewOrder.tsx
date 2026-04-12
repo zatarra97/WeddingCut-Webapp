@@ -1021,15 +1021,27 @@ const NewOrder = () => {
 							</aside>
 						</div>
 					) : (
-						/* ── Modalità singola: 2 colonne ── */
-						<div className="flex flex-col lg:flex-row gap-8">
+						/* ── Modalità singola: 3 colonne (stessa struttura del multi) ── */
+						<div className="flex flex-col xl:flex-row gap-4 xl:gap-5">
 
-							{/* Colonna sinistra */}
-							<section className="flex-1 max-w-4xl space-y-6">
-								<h1 className="text-2xl font-bold text-[#6d28d9]">Nuovo progetto</h1>
+							{/* Pannello sinistro: coppia/data + aggiungi matrimonio */}
+							<aside className="xl:w-80 shrink-0">
+								<div className="xl:sticky xl:top-24 space-y-3">
+									{renderCoupleHeader()}
+									<button
+										type="button"
+										onClick={() => duplicateEntry(0)}
+										className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-[#c4b5fd] text-[#7c3aed] font-medium hover:bg-[#f5f3ff] transition-colors cursor-pointer"
+									>
+										<i className="fa-solid fa-plus" />
+										Aggiungi un altro matrimonio
+									</button>
+								</div>
+							</aside>
+
+							{/* Pannello centrale: config servizi + note */}
+							<section className="flex-1 min-w-0 space-y-4">
 								{renderEntryConfig(false)}
-
-								{/* Note */}
 								<div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 md:p-8 space-y-4">
 									<h2 className="text-lg font-semibold text-gray-900">Note</h2>
 									<Textarea
@@ -1049,21 +1061,11 @@ const NewOrder = () => {
 										placeholder="Link o descrizione di video che vorresti usare come riferimento stilistico."
 									/>
 								</div>
-
 							</section>
 
-							{/* Colonna destra: coppia/data + aggiungi matrimonio + riepilogo */}
-							<aside className="lg:w-80 shrink-0">
-								<div className="lg:sticky lg:top-24 space-y-4">
-									{renderCoupleHeader()}
-									<button
-										type="button"
-										onClick={() => duplicateEntry(0)}
-										className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-[#c4b5fd] text-[#7c3aed] font-medium hover:bg-[#f5f3ff] transition-colors cursor-pointer"
-									>
-										<i className="fa-solid fa-plus" />
-										Aggiungi un altro matrimonio
-									</button>
+							{/* Pannello destro: riepilogo */}
+							<aside className="xl:w-72 shrink-0">
+								<div className="xl:sticky xl:top-24">
 									{renderSummaryPanel(false)}
 								</div>
 							</aside>
