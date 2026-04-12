@@ -4,7 +4,7 @@ import { toast } from "react-toastify"
 import {
 	genericGet, genericPatch, genericDelete,
 	getInvoiceUploadUrl, uploadFileToS3, getInvoiceDownloadUrl, deleteInvoice,
-	updateOrderEntry, addOrderEntry, deleteOrderEntry,
+	updateOrderEntry, deleteOrderEntry,
 } from "../../../services/api-utility"
 import DeleteModal from "../../../Components/DeleteModal"
 import DateTimePicker from "../../../Components/DateTimePicker"
@@ -180,9 +180,6 @@ const AdminOrderDetail = () => {
 	const [expandedEntry,  setExpandedEntry]  = useState<string | null>(null)
 	const [entryEdits,     setEntryEdits]     = useState<Record<string, Partial<OrderEntry>>>({})
 	const [savingEntry,    setSavingEntry]    = useState<string | null>(null)
-	const [addingEntry,    setAddingEntry]    = useState(false)
-	const [newEntryName,   setNewEntryName]   = useState("")
-	const [newEntryDate,   setNewEntryDate]   = useState("")
 
 	// Modali
 	const [deleteOpen,      setDeleteOpen]      = useState(false)
@@ -363,24 +360,6 @@ const AdminOrderDetail = () => {
 			toast.error("Errore durante il salvataggio")
 		} finally {
 			setSavingEntry(null)
-		}
-	}
-
-	// ── Entry: aggiungi ───────────────────────────────────────────────────────
-
-	const handleAddEntry = async () => {
-		if (!publicId) return
-		if (!newEntryName.trim()) { toast.error("Inserisci il nome della coppia"); return }
-		if (!newEntryDate) { toast.error("Inserisci la data del matrimonio"); return }
-		try {
-			const newEntry = await addOrderEntry(publicId, { coupleName: newEntryName.trim(), weddingDate: newEntryDate })
-			setOrder((prev) => prev ? { ...prev, entries: [...(prev.entries ?? []), newEntry] } : prev)
-			setNewEntryName("")
-			setNewEntryDate("")
-			setAddingEntry(false)
-			toast.success("Matrimonio aggiunto")
-		} catch {
-			toast.error("Errore durante l'aggiunta")
 		}
 	}
 
@@ -718,37 +697,6 @@ const AdminOrderDetail = () => {
 									)
 								})}
 							</div>
-
-							{/* Aggiungi matrimonio */}
-							{addingEntry ? (
-								<div className="border-t border-gray-100 p-4 space-y-2 bg-violet-50/40">
-									<p className="text-xs font-semibold text-violet-700 uppercase tracking-wide">Nuovo matrimonio</p>
-									<input
-										type="text"
-										value={newEntryName}
-										onChange={(e) => setNewEntryName(e.target.value)}
-										placeholder="Nome della coppia…"
-										className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
-									/>
-									<input
-										type="date"
-										value={newEntryDate}
-										onChange={(e) => setNewEntryDate(e.target.value)}
-										className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
-									/>
-									<div className="flex gap-2">
-										<button type="button" onClick={handleAddEntry} className="flex-1 px-3 py-1.5 rounded-lg bg-violet-600 text-white text-xs font-medium hover:bg-violet-700 transition-colors cursor-pointer">Aggiungi</button>
-										<button type="button" onClick={() => { setAddingEntry(false); setNewEntryName(""); setNewEntryDate("") }} className="px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer">Annulla</button>
-									</div>
-								</div>
-							) : (
-								<div className="border-t border-gray-100 p-4">
-									<button type="button" onClick={() => setAddingEntry(true)} className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-violet-300 text-violet-600 text-xs font-medium hover:bg-violet-50 transition-colors cursor-pointer">
-										<i className="fa-solid fa-plus text-[10px]" />
-										Aggiungi matrimonio
-									</button>
-								</div>
-							)}
 						</div>
 
 						{/* Note comuni */}
