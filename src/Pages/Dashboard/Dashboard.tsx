@@ -177,23 +177,25 @@ const Dashboard = () => {
 									{/* Left: names + dates */}
 									<div className="flex-1 min-w-0">
 										<div className="flex items-center gap-3 flex-wrap">
-											<h2 className="text-base font-bold text-gray-900 truncate">{order.primaryCoupleName || order.coupleName}</h2>
+											<h2 className="text-base font-bold text-gray-900 truncate">
+												{(order.entryCount ?? 1) > 1 ? "Ordine multiplo" : (order.primaryCoupleName || order.coupleName)}
+											</h2>
 											{(order.entryCount ?? 1) > 1 && (
 												<span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#ede9fe] text-[#7c3aed]">
-													+{(order.entryCount ?? 1) - 1} matrimoni
+													{order.entryCount} matrimoni
 												</span>
 											)}
 											<span className={`inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full ${STATUS_CLASSES[order.status] ?? "bg-gray-100 text-gray-600"}`}>
 												{STATUS_LABELS[order.status] ?? order.status}
 											</span>
 										</div>
-										<div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5 text-sm text-gray-500">
-											{(order.entryCount ?? 1) > 1 ? (
-												<span>
-													<i className="fa-solid fa-rings-wedding text-[10px] mr-1.5 text-[#a78bfa]" aria-hidden />
-													{order.entryCount} matrimoni
-												</span>
-											) : (
+										{(order.entryCount ?? 1) > 1 && order.entries && order.entries.length > 0 && (
+											<p className="mt-1 text-xs text-gray-400 truncate">
+												{order.entries.map((e) => e.coupleName).join(" · ")}
+											</p>
+										)}
+										<div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm text-gray-500">
+											{(order.entryCount ?? 1) === 1 && (
 												<span>
 													<i className="fa-solid fa-ring text-[10px] mr-1.5 text-[#a78bfa]" aria-hidden />
 													{formatDate(order.weddingDate)}

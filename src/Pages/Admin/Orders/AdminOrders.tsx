@@ -121,7 +121,7 @@ const AdminOrders = () => {
 								<td className="px-4 py-3 text-sm text-gray-700">{order.userEmail}</td>
 								<td className="px-4 py-3 font-medium text-gray-900 text-sm">
 									<div className="flex items-center gap-2 flex-wrap">
-										<span>{order.primaryCoupleName || order.coupleName}</span>
+										<span>{(order.entryCount ?? 1) > 1 ? "Ordine multiplo" : (order.primaryCoupleName || order.coupleName)}</span>
 										{(order.entryCount ?? 1) > 1 && (
 											<span className="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700">
 												{order.entryCount} matrimoni
@@ -182,7 +182,9 @@ const AdminOrders = () => {
 										className={`bg-white rounded-lg border border-gray-200 border-l-4 ${LANE_ACCENT[order.status]} p-3 cursor-pointer hover:shadow-md hover:border-gray-300 transition-all`}
 									>
 										<div className="flex items-center gap-2 flex-wrap">
-											<p className="font-semibold text-gray-900 text-sm truncate">{order.primaryCoupleName || order.coupleName}</p>
+											<p className="font-semibold text-gray-900 text-sm truncate">
+												{(order.entryCount ?? 1) > 1 ? "Ordine multiplo" : (order.primaryCoupleName || order.coupleName)}
+											</p>
 											{(order.entryCount ?? 1) > 1 && (
 												<span className="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700 shrink-0">
 													{order.entryCount} mat.
