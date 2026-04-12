@@ -1050,21 +1050,20 @@ const NewOrder = () => {
 									/>
 								</div>
 
-								{/* Bottone aggiungi matrimonio */}
-								<button
-									type="button"
-									onClick={() => duplicateEntry(0)}
-									className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-[#c4b5fd] text-[#7c3aed] font-medium hover:bg-[#f5f3ff] transition-colors cursor-pointer"
-								>
-									<i className="fa-solid fa-plus" />
-									Aggiungi un altro matrimonio
-								</button>
 							</section>
 
-							{/* Colonna destra: coppia/data + riepilogo */}
+							{/* Colonna destra: coppia/data + aggiungi matrimonio + riepilogo */}
 							<aside className="lg:w-80 shrink-0">
 								<div className="lg:sticky lg:top-24 space-y-4">
 									{renderCoupleHeader()}
+									<button
+										type="button"
+										onClick={() => duplicateEntry(0)}
+										className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-[#c4b5fd] text-[#7c3aed] font-medium hover:bg-[#f5f3ff] transition-colors cursor-pointer"
+									>
+										<i className="fa-solid fa-plus" />
+										Aggiungi un altro matrimonio
+									</button>
 									{renderSummaryPanel(false)}
 								</div>
 							</aside>
