@@ -333,13 +333,7 @@ const AdminOrderDetail = () => {
 				const newEntries = (prev.entries ?? []).map((e) =>
 					e.publicId === entryPublicId ? { ...e, ...edits } : e
 				)
-				// aggiorna status ordine padre: se tutte le entry sono completate/cancellate → completed
-				const statuses = newEntries.map((e) => e.status)
-				const allDone = statuses.every((s) => s === "completed" || s === "cancelled")
-				const anyInProgress = statuses.some((s) => s === "in_progress")
-				const allPending = statuses.every((s) => s === "pending")
-				const newStatus = allPending ? "pending" : allDone ? "completed" : anyInProgress ? "in_progress" : prev.status
-				return { ...prev, status: newStatus as Order["status"], entries: newEntries }
+				return { ...prev, entries: newEntries }
 			})
 			setEntryEdits((prev) => { const n = { ...prev }; delete n[entryPublicId]; return n })
 			setExpandedEntry(null)
@@ -464,30 +458,13 @@ const AdminOrderDetail = () => {
 														<p className="font-semibold text-gray-900 text-sm truncate">{entry.coupleName}</p>
 														<p className="text-xs text-gray-500">{new Date(entry.weddingDate).toLocaleDateString("it-IT")}</p>
 													</div>
-													<span className={`shrink-0 inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_CLASSES[edits.status ?? entry.status] ?? "bg-gray-100 text-gray-600"}`}>
-														{STATUS_LABELS[edits.status ?? entry.status] ?? entry.status}
-													</span>
-												</div>
+																			</div>
 												<i className={`fa-solid fa-chevron-${isExpanded ? "up" : "down"} text-gray-400 text-xs shrink-0`} />
 											</button>
 
 											{/* Body espandibile */}
 											{isExpanded && (
 												<div className="border-t border-gray-100 p-4 space-y-3 bg-gray-50/50">
-													{/* Status */}
-													<div>
-														<label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Stato</label>
-														<select
-															value={edits.status ?? entry.status}
-															onChange={(e) => setEntryEdits((prev) => ({ ...prev, [entry.publicId]: { ...(prev[entry.publicId] ?? {}), status: e.target.value as OrderEntry["status"] } }))}
-															className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
-														>
-															<option value="pending">In attesa</option>
-															<option value="in_progress">In lavorazione</option>
-															<option value="completed">Completato</option>
-															<option value="cancelled">Annullato</option>
-														</select>
-													</div>
 													{/* Note admin */}
 													<div>
 														<label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Note per il cliente</label>

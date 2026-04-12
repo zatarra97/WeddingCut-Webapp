@@ -195,7 +195,7 @@ const OrderDetail = () => {
 													<p className="text-sm text-gray-700 whitespace-pre-wrap">{e.adminNotes}</p>
 												</div>
 											)}
-											{e.status === "completed" && e.deliveryLink && (
+											{order.status === "completed" && e.deliveryLink && (
 												<a href={e.deliveryLink} target="_blank" rel="noopener noreferrer"
 													className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors"
 												>
@@ -273,10 +273,7 @@ const OrderDetail = () => {
 													{formatDate(entry.weddingDate)}
 												</p>
 											</div>
-											<span className={`inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full shrink-0 ${STATUS_CLASSES[entry.status] ?? "bg-gray-100 text-gray-600"}`}>
-												{STATUS_LABELS[entry.status] ?? entry.status}
-											</span>
-										</div>
+												</div>
 									))}
 								</div>
 							</div>
