@@ -422,12 +422,12 @@ const AdminOrderDetail = () => {
 
 						{/* Info ordine */}
 						<div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
-							<h2 className="text-base font-semibold text-gray-800 mb-4">Info ordine</h2>
-							<InfoRow label="ID" value={order.publicId} />
+							<div className="flex items-center justify-between gap-3 mb-4">
+								<h2 className="text-base font-semibold text-gray-800">Info ordine</h2>
+								<span className="text-xs font-mono text-gray-400 truncate">{order.publicId}</span>
+							</div>
 							<InfoRow label="Utente" value={order.userEmail} />
-							<InfoRow label="Telecamere" value={order.cameraCount} />
 							<InfoRow label="Creato il" value={new Date(order.createdAt).toLocaleString("it-IT")} />
-							<InfoRow label="Aggiornato il" value={new Date(order.updatedAt).toLocaleString("it-IT")} />
 						</div>
 
 						{/* Matrimoni — accordion per-entry */}
@@ -789,7 +789,8 @@ const AdminOrderDetail = () => {
 									)}
 								</div>
 
-								{/* Link consegna */}
+								{/* Link consegna — nascosto in pending */}
+								{!isPending && (
 								<div>
 									<label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
 										Link di consegna
@@ -802,9 +803,10 @@ const AdminOrderDetail = () => {
 										className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
 									/>
 								</div>
+								)}
 
-								{/* Fattura */}
-								<div>
+								{/* Fattura — nascosta in pending */}
+								{!isPending && <div>
 									<label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
 										Fattura
 									</label>
@@ -852,7 +854,7 @@ const AdminOrderDetail = () => {
 											)}
 										</div>
 									)}
-								</div>
+								</div>}
 
 								{/* Pulsante principale */}
 								{isPending ? (
