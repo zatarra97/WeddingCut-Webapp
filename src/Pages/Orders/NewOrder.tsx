@@ -532,7 +532,7 @@ const NewOrder = () => {
 											className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${isBatch ? "bg-white text-[#7c3aed] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
 										>
 											<i className="fa-solid fa-layer-group mr-1.5 text-xs" />
-											Batch
+											Multiplo
 										</button>
 									</div>
 								</div>
