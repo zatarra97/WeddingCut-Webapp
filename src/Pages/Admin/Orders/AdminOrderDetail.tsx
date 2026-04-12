@@ -184,6 +184,8 @@ const AdminOrderDetail = () => {
 	// Modali
 	const [deleteOpen,      setDeleteOpen]      = useState(false)
 	const [deleting,        setDeleting]        = useState(false)
+	const [rejectOpen,      setRejectOpen]      = useState(false)
+	const [rejecting,       setRejecting]       = useState(false)
 	const [acceptModalOpen, setAcceptModalOpen] = useState(false)
 	const [accepting,       setAccepting]       = useState(false)
 
@@ -282,6 +284,32 @@ const AdminOrderDetail = () => {
 			toast.error("Errore durante l'eliminazione")
 			setDeleting(false)
 			setDeleteOpen(false)
+		}
+	}
+
+	// ── Rifiuta ordine (pending → cancelled) ─────────────────────────────────
+
+	const handleReject = async () => {
+		if (!publicId || !order) return
+		setRejecting(true)
+		try {
+			await genericPatch(`admin/orders/${publicId}`, { status: "cancelled" })
+			// Aggiorna anche tutte le entries a cancelled
+			const entries = order.entries ?? []
+			await Promise.all(
+				entries.map((e) => updateOrderEntry(publicId, e.publicId, { status: "cancelled" }))
+			)
+			toast.success("Ordine rifiutato")
+			setOrder((prev) => prev ? {
+				...prev,
+				status: "cancelled",
+				entries: (prev.entries ?? []).map((e) => ({ ...e, status: "cancelled" as const })),
+			} : prev)
+		} catch {
+			toast.error("Errore durante il rifiuto")
+		} finally {
+			setRejecting(false)
+			setRejectOpen(false)
 		}
 	}
 
@@ -883,15 +911,26 @@ const AdminOrderDetail = () => {
 									</button>
 								)}
 
-								{/* Elimina */}
-								<button
-									type="button"
-									onClick={() => setDeleteOpen(true)}
-									className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors cursor-pointer"
-								>
-									<i className="fa-solid fa-trash" />
-									Elimina ordine
-								</button>
+								{/* Rifiuta (pending) / Elimina (altri stati) */}
+								{isPending ? (
+									<button
+										type="button"
+										onClick={() => setRejectOpen(true)}
+										className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors cursor-pointer"
+									>
+										<i className="fa-solid fa-xmark" />
+										Rifiuta ordine
+									</button>
+								) : (
+									<button
+										type="button"
+										onClick={() => setDeleteOpen(true)}
+										className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors cursor-pointer"
+									>
+										<i className="fa-solid fa-trash" />
+										Elimina ordine
+									</button>
+								)}
 							</div>
 						</div>
 					</div>
@@ -907,6 +946,43 @@ const AdminOrderDetail = () => {
 				description={`Sei sicuro di voler eliminare l'ordine di ${order.coupleName}? L'operazione è irreversibile.`}
 				isLoading={deleting}
 			/>
+
+			{/* Modale rifiuta ordine */}
+			{rejectOpen && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+					<div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+						<div className="flex items-start gap-4">
+							<div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-red-100">
+								<i className="fa-solid fa-xmark text-red-600" />
+							</div>
+							<div className="flex-1">
+								<h3 className="text-base font-semibold text-gray-900 mb-1">Rifiuta ordine</h3>
+								<p className="text-sm text-gray-600">
+									Tutti i matrimoni di questo ordine verranno impostati come <strong>annullati</strong>. Il cliente riceverà una notifica di stato. L'operazione non può essere annullata.
+								</p>
+							</div>
+						</div>
+						<div className="flex justify-end gap-3 mt-6">
+							<button
+								type="button"
+								onClick={() => setRejectOpen(false)}
+								disabled={rejecting}
+								className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+							>
+								Annulla
+							</button>
+							<button
+								type="button"
+								onClick={handleReject}
+								disabled={rejecting}
+								className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition-colors cursor-pointer"
+							>
+								{rejecting ? <><i className="fa-solid fa-spinner fa-spin mr-1.5" />Rifiuto…</> : "Rifiuta ordine"}
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
 
 			{/* Modale accetta senza fattura */}
 			{acceptModalOpen && (
