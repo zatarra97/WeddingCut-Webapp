@@ -394,6 +394,7 @@ const NewOrder = () => {
 				cameraSurcharge:  first.cameraSurcharge,
 				totalPrice:       orderTotalPrice,
 				isBatch:          isMulti ? 1 : 0,
+				isDraft:          false,
 				entries:          entriesPayload,
 			}
 
@@ -402,6 +403,64 @@ const NewOrder = () => {
 			navigate(`/user/orders/${result.publicId}`)
 		} catch {
 			toast.error("Errore durante l'invio dell'ordine")
+		} finally {
+			setSubmitting(false)
+		}
+	}
+
+	// ─── Salva bozza ─────────────────────────────────────────────────────────
+
+	const handleSaveDraft = async () => {
+		setSubmitting(true)
+		try {
+			const entriesPayload = entries.map((entry) => {
+				const main = calcEntryMainSubtotal(entry, services)
+				const fd = calcEntryFastDelivery(entry, services, main)
+				const cs = CAMERA_OPTIONS.find((o) => o.value === entry.cameraCount)?.surcharge ?? 0
+				return {
+					coupleName:       entry.coupleName.trim() || null,
+					weddingDate:      entry.weddingDate || null,
+					selectedServices: buildServicesPayload(entry, services),
+					deliveryMethod:   entry.deliveryMethod,
+					materialLink:     entry.deliveryMethod === "cloud_link" ? entry.materialLink.trim() : null,
+					materialSizeGb:   entry.materialSizeGb ? Number(entry.materialSizeGb) : null,
+					cameraCount:      entry.cameraCount,
+					exportFps:        entry.exportFps,
+					exportBitrate:    entry.exportBitrate,
+					exportAspect:     entry.exportAspect,
+					exportResolution: entry.exportResolution,
+					servicesTotal:    main + fd,
+					cameraSurcharge:  cs,
+					totalPrice:       main + fd + cs,
+				}
+			})
+			const first = entriesPayload[0]
+			const payload: Record<string, any> = {
+				generalNotes:     generalNotes.trim() || null,
+				referenceVideo:   referenceVideo.trim() || null,
+				coupleName:       first.coupleName,
+				weddingDate:      first.weddingDate,
+				deliveryMethod:   first.deliveryMethod,
+				materialLink:     first.materialLink,
+				materialSizeGb:   first.materialSizeGb,
+				cameraCount:      first.cameraCount,
+				exportFps:        first.exportFps,
+				exportBitrate:    first.exportBitrate,
+				exportAspect:     first.exportAspect,
+				exportResolution: first.exportResolution,
+				selectedServices: first.selectedServices,
+				servicesTotal:    first.servicesTotal,
+				cameraSurcharge:  first.cameraSurcharge,
+				totalPrice:       orderTotalPrice,
+				isBatch:          isMulti ? 1 : 0,
+				isDraft:          true,
+				entries:          entriesPayload,
+			}
+			const result = await genericPost("user/orders", payload)
+			toast.success("Bozza salvata!")
+			navigate(`/user/orders/${result.publicId}`)
+		} catch {
+			toast.error("Errore durante il salvataggio della bozza")
 		} finally {
 			setSubmitting(false)
 		}
@@ -859,7 +918,18 @@ const NewOrder = () => {
 				)}
 			</div>
 
-			<div className="px-4 pb-4">
+			<div className="px-4 pb-4 flex flex-col gap-2">
+				<button
+					type="button"
+					onClick={handleSaveDraft}
+					disabled={submitting || loadingServices}
+					className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-[#7c3aed] text-[#7c3aed] font-medium hover:bg-[#f5f3ff] disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer text-sm"
+				>
+					{submitting
+						? <><i className="fa-solid fa-spinner fa-spin" /> Salvataggio…</>
+						: <><i className="fa-solid fa-floppy-disk" /> Salva bozza</>
+					}
+				</button>
 				<button
 					type="submit"
 					disabled={submitting || loadingServices}

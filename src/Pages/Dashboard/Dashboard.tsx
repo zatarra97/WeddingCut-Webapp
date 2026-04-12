@@ -9,7 +9,7 @@ interface Order {
 	weddingDate: string
 	selectedServices: any[]
 	totalPrice: number | null
-	status: "pending" | "in_progress" | "completed" | "cancelled"
+	status: "draft" | "pending" | "quote_ready" | "in_progress" | "under_review" | "awaiting_payment" | "completed" | "cancelled"
 	createdAt: string
 	entryCount?: number
 	primaryCoupleName?: string
@@ -17,26 +17,38 @@ interface Order {
 }
 
 const TABS = [
-	{ key: "all",      label: "Tutte",         statusFilter: null },
-	{ key: "upcoming", label: "In attesa di approvazione", statusFilter: "pending" },
-	{ key: "editing",  label: "In lavorazione", statusFilter: "in_progress" },
-	{ key: "done",     label: "Completati",     statusFilter: "completed" },
+	{ key: "all",              label: "Tutti",                  statusFilter: null },
+	{ key: "draft",            label: "Bozze",                  statusFilter: "draft" },
+	{ key: "pending",          label: "In attesa",              statusFilter: "pending" },
+	{ key: "quote_ready",      label: "Preventivo pronto",      statusFilter: "quote_ready" },
+	{ key: "in_progress",      label: "In lavorazione",         statusFilter: "in_progress" },
+	{ key: "under_review",     label: "In revisione",           statusFilter: "under_review" },
+	{ key: "awaiting_payment", label: "In att. pagamento",      statusFilter: "awaiting_payment" },
+	{ key: "completed",        label: "Completati",             statusFilter: "completed" },
 ] as const
 
 type TabKey = (typeof TABS)[number]["key"]
 
 const STATUS_LABELS: Record<string, string> = {
-	pending:     "In attesa",
-	in_progress: "In lavorazione",
-	completed:   "Completato",
-	cancelled:   "Annullato",
+	draft:            "Bozza",
+	pending:          "In attesa",
+	quote_ready:      "Preventivo pronto",
+	in_progress:      "In lavorazione",
+	under_review:     "In revisione",
+	awaiting_payment: "In att. pagamento",
+	completed:        "Completato",
+	cancelled:        "Annullato",
 }
 
 const STATUS_CLASSES: Record<string, string> = {
-	pending:     "bg-yellow-100 text-yellow-800",
-	in_progress: "bg-blue-100 text-blue-800",
-	completed:   "bg-green-100 text-green-800",
-	cancelled:   "bg-gray-100 text-gray-600",
+	draft:            "bg-gray-100 text-gray-500",
+	pending:          "bg-yellow-100 text-yellow-800",
+	quote_ready:      "bg-purple-100 text-purple-800",
+	in_progress:      "bg-blue-100 text-blue-800",
+	under_review:     "bg-orange-100 text-orange-800",
+	awaiting_payment: "bg-amber-100 text-amber-800",
+	completed:        "bg-green-100 text-green-800",
+	cancelled:        "bg-gray-100 text-gray-600",
 }
 
 function formatDate(iso: string): string {

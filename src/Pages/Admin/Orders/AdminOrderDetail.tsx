@@ -15,9 +15,11 @@ interface OrderEntry {
 	publicId: string
 	coupleName: string
 	weddingDate: string
-	status: "pending" | "in_progress" | "completed" | "cancelled"
+	status: "pending" | "in_progress" | "under_review" | "revision_requested" | "revision_approved" | "completed" | "cancelled"
 	adminNotes?: string | null
 	deliveryLink?: string | null
+	previewLink?: string | null
+	userRevisionNotes?: string | null
 	// Per-entry service config
 	selectedServices?: SelectedService[] | string | null
 	deliveryMethod?: "cloud_link" | "upload_request" | null
@@ -63,9 +65,11 @@ interface Order {
 	servicesTotal?: number
 	cameraSurcharge: number
 	totalPrice?: number | null
-	status: "pending" | "in_progress" | "completed" | "cancelled"
+	status: "draft" | "pending" | "quote_ready" | "in_progress" | "under_review" | "awaiting_payment" | "completed" | "cancelled"
 	adminNotes?: string
 	deliveryLink?: string
+	invoiceLink?: string | null
+	proposedTotalPrice?: number | null
 	desiredDeliveryDate?: string
 	invoiceUrl?: string | null
 	entries?: OrderEntry[]
@@ -75,24 +79,37 @@ interface Order {
 
 // ─── Costanti ─────────────────────────────────────────────────────────────────
 
-const STATUS_OPTIONS = [
-	{ value: "in_progress", label: "In lavorazione" },
-	{ value: "completed",   label: "Completato" },
-	{ value: "cancelled",   label: "Annullato" },
+// Opzioni select stato entry
+const ENTRY_STATUS_OPTIONS = [
+	{ value: "pending",            label: "In attesa" },
+	{ value: "in_progress",        label: "In lavorazione" },
+	{ value: "under_review",       label: "In revisione" },
+	{ value: "revision_requested", label: "Revisione richiesta" },
+	{ value: "revision_approved",  label: "Approvato" },
+	{ value: "completed",          label: "Completato" },
+	{ value: "cancelled",          label: "Annullato" },
 ]
 
 const STATUS_CLASSES: Record<string, string> = {
-	pending:     "bg-yellow-100 text-yellow-800",
-	in_progress: "bg-blue-100 text-blue-800",
-	completed:   "bg-green-100 text-green-800",
-	cancelled:   "bg-gray-100 text-gray-600",
+	draft:            "bg-gray-100 text-gray-500",
+	pending:          "bg-yellow-100 text-yellow-800",
+	quote_ready:      "bg-purple-100 text-purple-800",
+	in_progress:      "bg-blue-100 text-blue-800",
+	under_review:     "bg-orange-100 text-orange-800",
+	awaiting_payment: "bg-amber-100 text-amber-800",
+	completed:        "bg-green-100 text-green-800",
+	cancelled:        "bg-gray-100 text-gray-600",
 }
 
 const STATUS_LABELS: Record<string, string> = {
-	pending:     "In attesa di approvazione",
-	in_progress: "In lavorazione",
-	completed:   "Completato",
-	cancelled:   "Annullato",
+	draft:            "Bozza",
+	pending:          "In attesa di approvazione",
+	quote_ready:      "Preventivo inviato",
+	in_progress:      "In lavorazione",
+	under_review:     "In revisione",
+	awaiting_payment: "In attesa di pagamento",
+	completed:        "Completato",
+	cancelled:        "Annullato",
 }
 
 const DELIVERY_LABELS: Record<string, string> = {
@@ -181,6 +198,10 @@ const AdminOrderDetail = () => {
 	const [entryEdits,     setEntryEdits]     = useState<Record<string, Partial<OrderEntry>>>({})
 	const [savingEntry,    setSavingEntry]    = useState<string | null>(null)
 
+	// Form preventivo
+	const [quotePrice,    setQuotePrice]    = useState("")
+	const [quoteDelivery, setQuoteDelivery] = useState<string | null>(null)
+
 	// Modali
 	const [deleteOpen,      setDeleteOpen]      = useState(false)
 	const [deleting,        setDeleting]        = useState(false)
@@ -188,6 +209,7 @@ const AdminOrderDetail = () => {
 	const [rejecting,       setRejecting]       = useState(false)
 	const [acceptModalOpen, setAcceptModalOpen] = useState(false)
 	const [accepting,       setAccepting]       = useState(false)
+	const [confirmingPayment, setConfirmingPayment] = useState(false)
 
 	useEffect(() => {
 		if (!publicId) return
@@ -208,24 +230,21 @@ const AdminOrderDetail = () => {
 			.finally(() => setLoading(false))
 	}, [publicId])
 
-	// ── Accetta ordine (pending → in_progress) ──────────────────────────────
+	// ── Invia preventivo (pending → quote_ready) ────────────────────────────
 
 	const handleAccept = async () => {
 		if (!publicId) return
 		setAccepting(true)
 		try {
 			await genericPatch(`admin/orders/${publicId}`, {
-				status: "in_progress",
-				adminNotes: adminNotes.trim() || null,
-				deliveryLink: deliveryLink.trim() || null,
-				desiredDeliveryDate: desiredDeliveryDate || null,
-				totalPrice: totalPrice ? Number(totalPrice) : null,
-				invoiceUrl: invoiceKey || null,
+				action: "accept_quote",
+				proposedTotalPrice: quotePrice ? Number(quotePrice) : null,
+				desiredDeliveryDate: quoteDelivery || null,
 			})
-			toast.success("Ordine accettato")
-			setOrder((prev) => prev ? { ...prev, status: "in_progress" } : prev)
+			toast.success("Preventivo inviato al cliente")
+			setOrder((prev) => prev ? { ...prev, status: "quote_ready" } : prev)
 		} catch {
-			toast.error("Errore durante l'accettazione")
+			toast.error("Errore durante l'invio del preventivo")
 		} finally {
 			setAccepting(false)
 			setAcceptModalOpen(false)
@@ -233,10 +252,26 @@ const AdminOrderDetail = () => {
 	}
 
 	const handleAcceptClick = () => {
-		if (!invoiceKey) {
-			setAcceptModalOpen(true)
-		} else {
-			handleAccept()
+		setAcceptModalOpen(true)
+	}
+
+	// ── Conferma pagamento (awaiting_payment → completed) ────────────────────
+
+	const handleConfirmPayment = async () => {
+		if (!publicId) return
+		setConfirmingPayment(true)
+		try {
+			await genericPatch(`admin/orders/${publicId}`, { action: "confirm_payment" })
+			toast.success("Pagamento confermato. Ordine completato!")
+			setOrder((prev) => prev ? {
+				...prev,
+				status: "completed",
+				entries: (prev.entries ?? []).map((e) => ({ ...e, status: "completed" as const })),
+			} : prev)
+		} catch {
+			toast.error("Errore durante la conferma del pagamento")
+		} finally {
+			setConfirmingPayment(false)
 		}
 	}
 
@@ -329,9 +364,17 @@ const AdminOrderDetail = () => {
 			const { uploadUrl, invoiceUrl: key } = await getInvoiceUploadUrl(publicId, file.name, file.type)
 			await uploadFileToS3(uploadUrl, file)
 			setInvoiceKey(key)
-			// Salva subito la chiave nel DB
-			await genericPatch(`admin/orders/${publicId}`, { invoiceUrl: key })
-			toast.success("Fattura caricata")
+			// Salva la chiave nel DB; se l'ordine è in revisione o in_progress, portalo ad awaiting_payment
+			const currentStatus = order?.status
+			const shouldTransition = currentStatus && !["awaiting_payment", "completed", "pending", "quote_ready", "cancelled", "draft"].includes(currentStatus)
+			if (shouldTransition) {
+				await genericPatch(`admin/orders/${publicId}`, { action: "upload_invoice", invoiceLink: key, invoiceUrl: key })
+				setOrder((prev) => prev ? { ...prev, status: "awaiting_payment" } : prev)
+				toast.success("Fattura caricata — ordine in attesa di pagamento")
+			} else {
+				await genericPatch(`admin/orders/${publicId}`, { invoiceUrl: key })
+				toast.success("Fattura caricata")
+			}
 		} catch {
 			toast.error("Errore durante il caricamento della fattura")
 		} finally {
@@ -668,8 +711,8 @@ const AdminOrderDetail = () => {
 																onChange={(e) => setEntryEdits((prev) => ({ ...prev, [entry.publicId]: { ...(prev[entry.publicId] ?? {}), status: e.target.value as OrderEntry["status"] } }))}
 																className={`block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500 ${STATUS_CLASSES[entryStatus] ?? ""}`}
 															>
-																{["pending", "in_progress", "completed", "cancelled"].map((s) => (
-																	<option key={s} value={s}>{STATUS_LABELS[s] ?? s}</option>
+																{ENTRY_STATUS_OPTIONS.map((s) => (
+																	<option key={s.value} value={s.value}>{s.label}</option>
 																))}
 															</select>
 														</div>
@@ -684,6 +727,23 @@ const AdminOrderDetail = () => {
 																className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500 resize-none"
 															/>
 														</div>
+														{/* Preview link */}
+														<div>
+															<label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Link preview</label>
+															<input
+																type="url"
+																value={(edits as any).previewLink ?? entry.previewLink ?? ""}
+																onChange={(e) => setEntryEdits((prev) => ({ ...prev, [entry.publicId]: { ...(prev[entry.publicId] ?? {}), previewLink: e.target.value } as any }))}
+																placeholder="https://… (link al video di preview)"
+																className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
+															/>
+														</div>
+														{entry.userRevisionNotes && (
+															<div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+																<p className="text-xs font-semibold text-orange-600 uppercase tracking-wide mb-1">Note revisione cliente</p>
+																<p className="text-sm text-orange-700">"{entry.userRevisionNotes}"</p>
+															</div>
+														)}
 														{/* Delivery link */}
 														<div>
 															<label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Link di consegna</label>
@@ -886,15 +946,50 @@ const AdminOrderDetail = () => {
 
 								{/* Pulsante principale */}
 								{isPending ? (
+									<div className="space-y-3">
+										<p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Invia preventivo</p>
+										<div>
+											<label className="block text-xs text-gray-500 mb-1">Prezzo proposto (€)</label>
+											<input
+												type="number"
+												step="0.01"
+												min="0"
+												value={quotePrice}
+												onChange={(e) => setQuotePrice(e.target.value)}
+												placeholder="Es. 1200.00"
+												className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
+											/>
+										</div>
+										<div>
+											<label className="block text-xs text-gray-500 mb-1">Data consegna stimata</label>
+											<DateTimePicker
+												value={quoteDelivery}
+												onChange={setQuoteDelivery}
+												dateOnly
+											/>
+										</div>
+										<button
+											type="button"
+											onClick={handleAcceptClick}
+											disabled={accepting}
+											className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+										>
+											{accepting
+												? <><i className="fa-solid fa-spinner fa-spin" /> Invio…</>
+												: <><i className="fa-solid fa-circle-check" /> Invia preventivo</>
+											}
+										</button>
+									</div>
+								) : order.status === "awaiting_payment" ? (
 									<button
 										type="button"
-										onClick={handleAcceptClick}
-										disabled={accepting || uploadingInvoice}
+										onClick={handleConfirmPayment}
+										disabled={confirmingPayment}
 										className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
 									>
-										{accepting
-											? <><i className="fa-solid fa-spinner fa-spin" /> Accettazione…</>
-											: <><i className="fa-solid fa-circle-check" /> Accetta ordine</>
+										{confirmingPayment
+											? <><i className="fa-solid fa-spinner fa-spin" /> Conferma…</>
+											: <><i className="fa-solid fa-circle-check" /> Conferma pagamento ricevuto</>
 										}
 									</button>
 								) : (
@@ -984,18 +1079,21 @@ const AdminOrderDetail = () => {
 				</div>
 			)}
 
-			{/* Modale accetta senza fattura */}
+			{/* Modale conferma invio preventivo */}
 			{acceptModalOpen && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
 					<div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
 						<div className="flex items-start gap-4">
-							<div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-amber-100">
-								<i className="fa-solid fa-triangle-exclamation text-amber-600" />
+							<div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-green-100">
+								<i className="fa-solid fa-file-invoice text-green-600" />
 							</div>
 							<div className="flex-1">
-								<h3 className="text-base font-semibold text-gray-900 mb-1">Accetta senza fattura</h3>
+								<h3 className="text-base font-semibold text-gray-900 mb-1">Invia preventivo</h3>
 								<p className="text-sm text-gray-600">
-									Sei sicuro di voler accettare l'ordine senza inviare una fattura al cliente?
+									{quotePrice
+										? `Invierai un preventivo di €${Number(quotePrice).toFixed(2)} al cliente. Il cliente potrà accettare o rifiutare.`
+										: "Invierai il preventivo al cliente senza specificare un prezzo. Il cliente potrà accettare o rifiutare."
+									}
 								</p>
 							</div>
 						</div>
@@ -1015,8 +1113,8 @@ const AdminOrderDetail = () => {
 								className="px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors cursor-pointer"
 							>
 								{accepting
-									? <><i className="fa-solid fa-spinner fa-spin mr-1" />Accettazione…</>
-									: "Accetta comunque"
+									? <><i className="fa-solid fa-spinner fa-spin mr-1" />Invio…</>
+									: "Invia preventivo"
 								}
 							</button>
 						</div>

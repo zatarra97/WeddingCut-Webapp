@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { toast } from "react-toastify"
-import { genericGet } from "../../services/api-utility"
+import { genericGet, genericPatch, genericDelete } from "../../services/api-utility"
 
 // ─── Tipi ────────────────────────────────────────────────────────────────────
 
@@ -23,6 +23,8 @@ interface OrderEntry {
 	status: string
 	adminNotes?: string | null
 	deliveryLink?: string | null
+	previewLink?: string | null
+	userRevisionNotes?: string | null
 	// Per-entry service config
 	selectedServices?: StoredService[] | string | null
 	deliveryMethod?: "cloud_link" | "upload_request" | null
@@ -58,9 +60,11 @@ interface Order {
 	servicesTotal?: number | null
 	cameraSurcharge?: number | null
 	totalPrice?: number | null
-	status: "pending" | "in_progress" | "completed" | "cancelled"
+	status: "draft" | "pending" | "quote_ready" | "in_progress" | "under_review" | "awaiting_payment" | "completed" | "cancelled"
 	adminNotes?: string | null
 	deliveryLink?: string | null
+	invoiceLink?: string | null
+	proposedTotalPrice?: number | null
 	createdAt: string
 	updatedAt: string
 }
@@ -91,17 +95,45 @@ const EXPORT_RESOLUTION_LABELS: Record<string, string> = {
 }
 
 const STATUS_LABELS: Record<string, string> = {
-	pending:     "In attesa di approvazione",
-	in_progress: "In lavorazione",
-	completed:   "Completato",
-	cancelled:   "Annullato",
+	draft:            "Bozza",
+	pending:          "In attesa di approvazione",
+	quote_ready:      "Preventivo pronto",
+	in_progress:      "In lavorazione",
+	under_review:     "In revisione",
+	awaiting_payment: "In attesa di pagamento",
+	completed:        "Completato",
+	cancelled:        "Annullato",
 }
 
 const STATUS_CLASSES: Record<string, string> = {
-	pending:     "bg-yellow-100 text-yellow-800",
-	in_progress: "bg-blue-100 text-blue-800",
-	completed:   "bg-green-100 text-green-800",
-	cancelled:   "bg-gray-100 text-gray-600",
+	draft:            "bg-gray-100 text-gray-500",
+	pending:          "bg-yellow-100 text-yellow-800",
+	quote_ready:      "bg-purple-100 text-purple-800",
+	in_progress:      "bg-blue-100 text-blue-800",
+	under_review:     "bg-orange-100 text-orange-800",
+	awaiting_payment: "bg-amber-100 text-amber-800",
+	completed:        "bg-green-100 text-green-800",
+	cancelled:        "bg-gray-100 text-gray-600",
+}
+
+const ENTRY_STATUS_LABELS: Record<string, string> = {
+	pending:           "In attesa",
+	in_progress:       "In lavorazione",
+	under_review:      "In revisione",
+	revision_requested:"Revisione richiesta",
+	revision_approved: "Approvato",
+	completed:         "Completato",
+	cancelled:         "Annullato",
+}
+
+const ENTRY_STATUS_CLASSES: Record<string, string> = {
+	pending:           "bg-yellow-100 text-yellow-800",
+	in_progress:       "bg-blue-100 text-blue-800",
+	under_review:      "bg-orange-100 text-orange-800",
+	revision_requested:"bg-red-100 text-red-700",
+	revision_approved: "bg-green-100 text-green-700",
+	completed:         "bg-green-100 text-green-800",
+	cancelled:         "bg-gray-100 text-gray-600",
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -137,6 +169,8 @@ const OrderDetail = () => {
 	const [order, setOrder] = useState<Order | null>(null)
 	const [loading, setLoading] = useState(true)
 	const [openEntries, setOpenEntries] = useState<Set<string>>(new Set())
+	const [revisionNotes, setRevisionNotes] = useState<Record<string, string>>({})
+	const [actionLoading, setActionLoading] = useState(false)
 
 	const toggleEntry = (id: string) =>
 		setOpenEntries((prev) => {
@@ -144,6 +178,13 @@ const OrderDetail = () => {
 			next.has(id) ? next.delete(id) : next.add(id)
 			return next
 		})
+
+	const reloadOrder = () => {
+		if (!publicId) return
+		genericGet(`user/orders/${publicId}`)
+			.then((data: Order) => setOrder(data))
+			.catch(() => toast.error("Errore nel ricaricamento dell'ordine"))
+	}
 
 	useEffect(() => {
 		if (!publicId) return
@@ -155,6 +196,77 @@ const OrderDetail = () => {
 			})
 			.finally(() => setLoading(false))
 	}, [publicId])
+
+	const handleAcceptQuote = async () => {
+		if (!order) return
+		setActionLoading(true)
+		try {
+			await genericPatch(`user/orders/${order.publicId}`, { action: "accept_quote" })
+			toast.success("Preventivo accettato!")
+			reloadOrder()
+		} catch { toast.error("Errore durante l'accettazione del preventivo") }
+		finally { setActionLoading(false) }
+	}
+
+	const handleRejectQuote = async () => {
+		if (!order) return
+		setActionLoading(true)
+		try {
+			await genericPatch(`user/orders/${order.publicId}`, { action: "reject_quote" })
+			toast.success("Preventivo rifiutato.")
+			reloadOrder()
+		} catch { toast.error("Errore durante il rifiuto del preventivo") }
+		finally { setActionLoading(false) }
+	}
+
+	const handleDeleteDraft = async () => {
+		if (!order) return
+		setActionLoading(true)
+		try {
+			await genericDelete(`user/orders/${order.publicId}`)
+			toast.success("Bozza eliminata.")
+			navigate("/user/dashboard")
+		} catch { toast.error("Errore durante l'eliminazione della bozza") }
+		finally { setActionLoading(false) }
+	}
+
+	const handleSubmitDraft = async () => {
+		if (!order) return
+		setActionLoading(true)
+		try {
+			await genericPatch(`user/orders/${order.publicId}`, { action: "submit" })
+			toast.success("Ordine inviato!")
+			reloadOrder()
+		} catch (err: any) {
+			toast.error(err?.response?.data?.error?.message || "Errore durante l'invio dell'ordine")
+		}
+		finally { setActionLoading(false) }
+	}
+
+	const handleApproveEntry = async (entryPublicId: string) => {
+		if (!order) return
+		setActionLoading(true)
+		try {
+			await genericPatch(`user/orders/${order.publicId}/entries/${entryPublicId}`, { action: "approve" })
+			toast.success("Entry approvata!")
+			reloadOrder()
+		} catch { toast.error("Errore durante l'approvazione") }
+		finally { setActionLoading(false) }
+	}
+
+	const handleRequestRevision = async (entryPublicId: string) => {
+		if (!order) return
+		setActionLoading(true)
+		try {
+			await genericPatch(`user/orders/${order.publicId}/entries/${entryPublicId}`, {
+				action: "request_revision",
+				notes: revisionNotes[entryPublicId] || "",
+			})
+			toast.success("Revisione richiesta.")
+			reloadOrder()
+		} catch { toast.error("Errore durante la richiesta di revisione") }
+		finally { setActionLoading(false) }
+	}
 
 	if (loading) {
 		return (
@@ -192,8 +304,90 @@ const OrderDetail = () => {
 						Progetti
 					</button>
 					<span className="text-gray-300">/</span>
-					<h1 className="text-xl font-bold text-gray-800">{order.coupleName}</h1>
+					<h1 className="text-xl font-bold text-gray-800">{order.coupleName || "Bozza"}</h1>
 				</div>
+
+				{/* Banner azioni per stato ordine */}
+				{order.status === "draft" && (
+					<div className="mb-6 bg-gray-50 border border-gray-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+						<div>
+							<p className="font-medium text-gray-700">Questo ordine è una bozza.</p>
+							<p className="text-sm text-gray-500 mt-0.5">Completalo e invialo quando è pronto.</p>
+						</div>
+						<div className="flex gap-2 shrink-0">
+							<button
+								onClick={handleDeleteDraft}
+								disabled={actionLoading}
+								className="px-4 py-2 border border-red-300 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 disabled:opacity-50 cursor-pointer transition-colors"
+							>
+								<i className="fa-solid fa-trash mr-1.5" />
+								Elimina bozza
+							</button>
+							<button
+								onClick={handleSubmitDraft}
+								disabled={actionLoading}
+								className="px-4 py-2 bg-[#7c3aed] text-white rounded-lg text-sm font-medium hover:bg-[#6d28d9] disabled:opacity-50 cursor-pointer transition-colors"
+							>
+								<i className="fa-solid fa-paper-plane mr-1.5" />
+								Invia ordine
+							</button>
+						</div>
+					</div>
+				)}
+
+				{order.status === "quote_ready" && (
+					<div className="mb-6 bg-purple-50 border border-purple-200 rounded-xl p-4">
+						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+							<div>
+								<p className="font-semibold text-purple-900">Preventivo ricevuto</p>
+								<div className="flex flex-wrap gap-4 mt-1 text-sm text-purple-700">
+									{order.proposedTotalPrice != null && (
+										<span><i className="fa-solid fa-euro-sign mr-1" />Prezzo proposto: <strong>€{Number(order.proposedTotalPrice).toFixed(2)}</strong></span>
+									)}
+									{order.desiredDeliveryDate && (
+										<span><i className="fa-solid fa-calendar mr-1" />Consegna stimata: <strong>{formatDate(order.desiredDeliveryDate)}</strong></span>
+									)}
+								</div>
+							</div>
+							<div className="flex gap-2 shrink-0">
+								<button
+									onClick={handleRejectQuote}
+									disabled={actionLoading}
+									className="px-4 py-2 border border-red-300 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 disabled:opacity-50 cursor-pointer transition-colors"
+								>
+									Rifiuta
+								</button>
+								<button
+									onClick={handleAcceptQuote}
+									disabled={actionLoading}
+									className="px-4 py-2 bg-[#7c3aed] text-white rounded-lg text-sm font-medium hover:bg-[#6d28d9] disabled:opacity-50 cursor-pointer transition-colors"
+								>
+									Accetta preventivo
+								</button>
+							</div>
+						</div>
+					</div>
+				)}
+
+				{order.status === "awaiting_payment" && (
+					<div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+						<div>
+							<p className="font-semibold text-amber-800">In attesa di pagamento</p>
+							<p className="text-sm text-amber-700 mt-0.5">Scarica la fattura e procedi con il pagamento.</p>
+						</div>
+						{order.invoiceLink && (
+							<a
+								href={order.invoiceLink}
+								target="_blank"
+								rel="noopener noreferrer"
+								className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors shrink-0"
+							>
+								<i className="fa-solid fa-file-invoice" />
+								Visualizza fattura
+							</a>
+						)}
+					</div>
+				)}
 
 				<div className="flex flex-col lg:flex-row gap-8">
 
@@ -474,6 +668,72 @@ const OrderDetail = () => {
 																<span className="text-[#7c3aed]">€{entryTot.toFixed(2)}</span>
 															</div>
 														)}
+
+														{/* Sezione revisione preview */}
+														{entry.previewLink && (
+															<div className="border-t border-gray-200 pt-4 space-y-3">
+																<div className="flex items-center justify-between">
+																	<p className="text-sm font-semibold text-gray-700">
+																		<i className="fa-solid fa-film mr-1.5 text-[#7c3aed]" />
+																		Preview caricata
+																	</p>
+																	<a
+																		href={entry.previewLink}
+																		target="_blank"
+																		rel="noopener noreferrer"
+																		className="text-sm text-[#7c3aed] underline underline-offset-2 hover:text-[#6d28d9]"
+																	>
+																		Guarda preview
+																	</a>
+																</div>
+																{entry.status === "under_review" && (
+																	<div className="space-y-2">
+																		<textarea
+																			value={revisionNotes[entry.publicId] || ""}
+																			onChange={(ev) => setRevisionNotes((p) => ({ ...p, [entry.publicId]: ev.target.value }))}
+																			placeholder="Note per la revisione (opzionale)"
+																			rows={2}
+																			className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-[#7c3aed] focus:border-transparent"
+																		/>
+																		<div className="flex gap-2">
+																			<button
+																				type="button"
+																				onClick={() => handleRequestRevision(entry.publicId)}
+																				disabled={actionLoading}
+																				className="px-3 py-1.5 border border-orange-400 text-orange-600 rounded-lg text-xs font-medium hover:bg-orange-50 disabled:opacity-50 cursor-pointer transition-colors"
+																			>
+																				<i className="fa-solid fa-rotate-left mr-1" />
+																				Richiedi revisione
+																			</button>
+																			<button
+																				type="button"
+																				onClick={() => handleApproveEntry(entry.publicId)}
+																				disabled={actionLoading}
+																				className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700 disabled:opacity-50 cursor-pointer transition-colors"
+																			>
+																				<i className="fa-solid fa-check mr-1" />
+																				Approva
+																			</button>
+																		</div>
+																	</div>
+																)}
+																{entry.status === "revision_requested" && (
+																	<div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-xs text-orange-700">
+																		<i className="fa-solid fa-clock mr-1" />
+																		<span className="font-medium">Revisione richiesta</span>
+																		{entry.userRevisionNotes && (
+																			<p className="mt-1 text-orange-600">"{entry.userRevisionNotes}"</p>
+																		)}
+																	</div>
+																)}
+																{entry.status === "revision_approved" && (
+																	<div className="bg-green-50 border border-green-200 rounded-lg p-3 text-xs text-green-700 font-medium">
+																		<i className="fa-solid fa-circle-check mr-1" />
+																		Approvato
+																	</div>
+																)}
+															</div>
+														)}
 													</div>
 												)}
 											</div>
@@ -667,6 +927,73 @@ const OrderDetail = () => {
 						</div>}
 
 						{/* Impostazioni esportazione (solo ordini singoli) */}
+						{/* Revisione preview (ordini singoli) */}
+						{!isBatch && order.entries && order.entries[0]?.previewLink && (
+							<div className="rounded-xl border border-orange-200 bg-orange-50 shadow-sm p-6 space-y-4">
+								<h2 className="text-base font-semibold text-orange-900">
+									<i className="fa-solid fa-film mr-2" />
+									Preview caricata
+								</h2>
+								<div className="flex items-center justify-between">
+									<span className="text-sm text-orange-700">Guarda la preview e comunicaci il tuo feedback.</span>
+									<a
+										href={order.entries[0].previewLink}
+										target="_blank"
+										rel="noopener noreferrer"
+										className="text-sm text-[#7c3aed] underline underline-offset-2 hover:text-[#6d28d9]"
+									>
+										Guarda preview
+									</a>
+								</div>
+								{order.entries[0].status === "under_review" && (
+									<div className="space-y-2">
+										<textarea
+											value={revisionNotes[order.entries[0].publicId] || ""}
+											onChange={(ev) => setRevisionNotes((p) => ({ ...p, [order.entries![0].publicId]: ev.target.value }))}
+											placeholder="Note per la revisione (opzionale)"
+											rows={2}
+											className="w-full text-sm border border-orange-300 bg-white rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-[#7c3aed] focus:border-transparent"
+										/>
+										<div className="flex gap-2">
+											<button
+												type="button"
+												onClick={() => handleRequestRevision(order.entries![0].publicId)}
+												disabled={actionLoading}
+												className="px-4 py-2 border border-orange-400 text-orange-600 rounded-lg text-sm font-medium hover:bg-orange-100 disabled:opacity-50 cursor-pointer transition-colors"
+											>
+												<i className="fa-solid fa-rotate-left mr-1.5" />
+												Richiedi revisione
+											</button>
+											<button
+												type="button"
+												onClick={() => handleApproveEntry(order.entries![0].publicId)}
+												disabled={actionLoading}
+												className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 cursor-pointer transition-colors"
+											>
+												<i className="fa-solid fa-check mr-1.5" />
+												Approva
+											</button>
+										</div>
+									</div>
+								)}
+								{order.entries[0].status === "revision_requested" && (
+									<div className="bg-white border border-orange-200 rounded-lg p-3 text-sm text-orange-700">
+										<i className="fa-solid fa-clock mr-1" />
+										<span className="font-medium">Revisione richiesta</span>
+										{order.entries[0].userRevisionNotes && (
+											<p className="mt-1 text-orange-600 text-xs">"{order.entries[0].userRevisionNotes}"</p>
+										)}
+									</div>
+								)}
+								{order.entries[0].status === "revision_approved" && (
+									<div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-700 font-medium">
+										<i className="fa-solid fa-circle-check mr-1" />
+										Approvato
+									</div>
+								)}
+							</div>
+						)}
+
 						{!isBatch && (order.exportFps || order.exportBitrate || order.exportAspect || order.exportResolution) && (
 							<div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 md:p-8 space-y-4">
 								<div>
