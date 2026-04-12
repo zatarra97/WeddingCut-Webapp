@@ -16,11 +16,21 @@ interface StoredService {
 	notes?: string | null
 }
 
+interface OrderEntry {
+	publicId: string
+	coupleName: string
+	weddingDate: string
+	status: string
+	adminNotes?: string | null
+	deliveryLink?: string | null
+}
+
 interface Order {
 	publicId: string
 	coupleName: string
 	weddingDate: string
 	desiredDeliveryDate?: string | null
+	entries?: OrderEntry[]
 	deliveryMethod: "cloud_link" | "upload_request"
 	materialLink?: string | null
 	materialSizeGb: number
@@ -168,30 +178,58 @@ const OrderDetail = () => {
 					<section className="flex-1 max-w-4xl space-y-6">
 
 						{/* Banner aggiornamenti admin */}
-						{(order.adminNotes || (order.status === "completed" && order.deliveryLink)) && (
-							<div className="rounded-xl border border-[#ddd6fe] bg-[#f5f3ff] shadow-sm p-6 space-y-4">
-								<h2 className="text-base font-semibold text-[#6d28d9]">
-									<i className="fa-solid fa-circle-info mr-2" />
-									Aggiornamenti dal team
-								</h2>
-								{order.adminNotes && (
-									<div>
-										<p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Note</p>
-										<p className="text-sm text-gray-700 whitespace-pre-wrap">{order.adminNotes}</p>
-									</div>
-								)}
-								{order.status === "completed" && order.deliveryLink && (
-									<a
-										href={order.deliveryLink}
-										target="_blank"
-										rel="noopener noreferrer"
-										className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors"
-									>
-										<i className="fa-solid fa-download" />
-										Scarica video
-									</a>
-								)}
-							</div>
+						{order.entries && order.entries.length > 0 ? (
+							// Se ci sono entries, mostra aggiornamenti per-entry
+							order.entries.some((e) => e.adminNotes || (order.status === "completed" && e.deliveryLink)) && (
+								<div className="rounded-xl border border-[#ddd6fe] bg-[#f5f3ff] shadow-sm p-6 space-y-4">
+									<h2 className="text-base font-semibold text-[#6d28d9]">
+										<i className="fa-solid fa-circle-info mr-2" />
+										Aggiornamenti dal team
+									</h2>
+									{order.entries.filter((e) => e.adminNotes || e.deliveryLink).map((e) => (
+										<div key={e.publicId} className="space-y-3 border-t border-[#ddd6fe] pt-3 first:border-0 first:pt-0">
+											<p className="text-xs font-semibold text-[#7c3aed] uppercase tracking-wide">{e.coupleName}</p>
+											{e.adminNotes && (
+												<div>
+													<p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Note</p>
+													<p className="text-sm text-gray-700 whitespace-pre-wrap">{e.adminNotes}</p>
+												</div>
+											)}
+											{e.status === "completed" && e.deliveryLink && (
+												<a href={e.deliveryLink} target="_blank" rel="noopener noreferrer"
+													className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors"
+												>
+													<i className="fa-solid fa-download" />
+													Scarica video — {e.coupleName}
+												</a>
+											)}
+										</div>
+									))}
+								</div>
+							)
+						) : (
+							(order.adminNotes || (order.status === "completed" && order.deliveryLink)) && (
+								<div className="rounded-xl border border-[#ddd6fe] bg-[#f5f3ff] shadow-sm p-6 space-y-4">
+									<h2 className="text-base font-semibold text-[#6d28d9]">
+										<i className="fa-solid fa-circle-info mr-2" />
+										Aggiornamenti dal team
+									</h2>
+									{order.adminNotes && (
+										<div>
+											<p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Note</p>
+											<p className="text-sm text-gray-700 whitespace-pre-wrap">{order.adminNotes}</p>
+										</div>
+									)}
+									{order.status === "completed" && order.deliveryLink && (
+										<a href={order.deliveryLink} target="_blank" rel="noopener noreferrer"
+											className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors"
+										>
+											<i className="fa-solid fa-download" />
+											Scarica video
+										</a>
+									)}
+								</div>
+							)
 						)}
 
 						{/* Intestazione progetto */}
@@ -202,19 +240,47 @@ const OrderDetail = () => {
 									{STATUS_LABELS[order.status] ?? order.status}
 								</span>
 							</div>
-							<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-								<div>
-									<p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Data del matrimonio</p>
-									<p className="text-sm font-medium text-gray-800">{formatDate(order.weddingDate)}</p>
-								</div>
-								{order.desiredDeliveryDate && (
+							{(!order.entries || order.entries.length <= 1) && (
+								<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 									<div>
-										<p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Data di consegna desiderata</p>
-										<p className="text-sm font-medium text-gray-800">{formatDate(order.desiredDeliveryDate)}</p>
+										<p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Data del matrimonio</p>
+										<p className="text-sm font-medium text-gray-800">{formatDate(order.weddingDate)}</p>
 									</div>
-								)}
-							</div>
+									{order.desiredDeliveryDate && (
+										<div>
+											<p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Data di consegna desiderata</p>
+											<p className="text-sm font-medium text-gray-800">{formatDate(order.desiredDeliveryDate)}</p>
+										</div>
+									)}
+								</div>
+							)}
 						</div>
+
+						{/* Matrimoni inclusi (solo batch) */}
+						{order.entries && order.entries.length > 1 && (
+							<div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 md:p-8 space-y-4">
+								<div>
+									<h2 className="text-lg font-semibold text-gray-900">Matrimoni inclusi</h2>
+									<p className="text-sm text-gray-500 mt-0.5">{order.entries.length} matrimoni in questo ordine.</p>
+								</div>
+								<div className="divide-y divide-gray-100">
+									{order.entries.map((entry) => (
+										<div key={entry.publicId} className="flex flex-col sm:flex-row sm:items-center gap-2 py-3 first:pt-0 last:pb-0">
+											<div className="flex-1 min-w-0">
+												<p className="font-semibold text-gray-900 text-sm">{entry.coupleName}</p>
+												<p className="text-xs text-gray-500 mt-0.5">
+													<i className="fa-solid fa-ring text-[9px] mr-1 text-[#a78bfa]" aria-hidden />
+													{formatDate(entry.weddingDate)}
+												</p>
+											</div>
+											<span className={`inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full shrink-0 ${STATUS_CLASSES[entry.status] ?? "bg-gray-100 text-gray-600"}`}>
+												{STATUS_LABELS[entry.status] ?? entry.status}
+											</span>
+										</div>
+									))}
+								</div>
+							</div>
+						)}
 
 						{/* Servizi */}
 						<div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 md:p-8 space-y-4">

@@ -320,6 +320,28 @@ export const deleteInvoice = async (orderId: string): Promise<void> => {
 	await apiClient.delete(`${import.meta.env.VITE_BACKEND_URL}/admin/orders/${orderId}/invoice`)
 }
 
+// ---------------------------------------------------------------------------
+// API — Entry ordine (matrimoni multipli)
+// ---------------------------------------------------------------------------
+export const updateOrderEntry = async (
+	orderId: string,
+	entryId: string,
+	data: { status?: string; adminNotes?: string | null; deliveryLink?: string | null },
+): Promise<void> => {
+	await genericPatch(`admin/orders/${orderId}/entries/${entryId}`, data)
+}
+
+export const addOrderEntry = async (
+	orderId: string,
+	data: { coupleName: string; weddingDate: string },
+): Promise<any> => {
+	return await genericPost(`admin/orders/${orderId}/entries`, data)
+}
+
+export const deleteOrderEntry = async (orderId: string, entryId: string): Promise<void> => {
+	await apiClient.delete(`${import.meta.env.VITE_BACKEND_URL}/admin/orders/${orderId}/entries/${entryId}`)
+}
+
 export const getPresignedUrl = async (
 	entity: string,
 	id: string | number,

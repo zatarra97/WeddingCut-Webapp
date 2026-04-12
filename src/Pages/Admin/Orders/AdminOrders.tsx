@@ -13,6 +13,8 @@ interface Order {
 	totalPrice: number | null
 	status: "pending" | "in_progress" | "completed" | "cancelled"
 	createdAt: string
+	entryCount?: number
+	primaryCoupleName?: string
 }
 
 type ViewMode = "table" | "lanes"
@@ -117,8 +119,22 @@ const AdminOrders = () => {
 							>
 								<td className="px-4 py-3 text-xs font-mono text-gray-500">{order.publicId.slice(0, 8)}…</td>
 								<td className="px-4 py-3 text-sm text-gray-700">{order.userEmail}</td>
-								<td className="px-4 py-3 font-medium text-gray-900 text-sm">{order.coupleName}</td>
-								<td className="px-4 py-3 text-gray-600 text-sm">{new Date(order.weddingDate).toLocaleDateString("it-IT")}</td>
+								<td className="px-4 py-3 font-medium text-gray-900 text-sm">
+									<div className="flex items-center gap-2 flex-wrap">
+										<span>{order.primaryCoupleName || order.coupleName}</span>
+										{(order.entryCount ?? 1) > 1 && (
+											<span className="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700">
+												{order.entryCount} matrimoni
+											</span>
+										)}
+									</div>
+								</td>
+								<td className="px-4 py-3 text-gray-600 text-sm">
+									{(order.entryCount ?? 1) > 1
+										? <em className="text-gray-400 font-normal">Vedi dettaglio</em>
+										: new Date(order.weddingDate).toLocaleDateString("it-IT")
+									}
+								</td>
 								<td className="px-4 py-3 text-gray-700 text-sm font-medium">
 									{order.totalPrice != null ? `€${Number(order.totalPrice).toFixed(2)}` : <em className="text-gray-400 font-normal">Su richiesta</em>}
 								</td>
@@ -165,12 +181,22 @@ const AdminOrders = () => {
 										onClick={() => navigate(`/admin/orders/${order.publicId}`)}
 										className={`bg-white rounded-lg border border-gray-200 border-l-4 ${LANE_ACCENT[order.status]} p-3 cursor-pointer hover:shadow-md hover:border-gray-300 transition-all`}
 									>
-										<p className="font-semibold text-gray-900 text-sm truncate">{order.coupleName}</p>
+										<div className="flex items-center gap-2 flex-wrap">
+											<p className="font-semibold text-gray-900 text-sm truncate">{order.primaryCoupleName || order.coupleName}</p>
+											{(order.entryCount ?? 1) > 1 && (
+												<span className="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700 shrink-0">
+													{order.entryCount} mat.
+												</span>
+											)}
+										</div>
 										<p className="text-xs text-gray-500 mt-0.5 truncate">{order.userEmail}</p>
 										<div className="flex items-center justify-between mt-2.5 text-xs text-gray-500">
 											<span className="flex items-center gap-1">
 												<i className="fa-solid fa-calendar-alt text-gray-400" aria-hidden />
-												{new Date(order.weddingDate).toLocaleDateString("it-IT")}
+												{(order.entryCount ?? 1) > 1
+													? `${order.entryCount} matrimoni`
+													: new Date(order.weddingDate).toLocaleDateString("it-IT")
+												}
 											</span>
 											<span className="font-semibold text-gray-700">
 												{order.totalPrice != null

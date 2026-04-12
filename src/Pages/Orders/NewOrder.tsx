@@ -126,6 +126,13 @@ function getMinPrice(service: PublicService): number | null {
 const NewOrder = () => {
 	const navigate = useNavigate()
 
+	// Modalità batch
+	const [isBatch, setIsBatch] = useState(false)
+	const [batchEntries, setBatchEntries] = useState<{ coupleName: string; weddingDate: string }[]>([
+		{ coupleName: "", weddingDate: "" },
+	])
+
+	// Singolo (retrocompat)
 	const [coupleNames,         setCoupleNames]         = useState("")
 	const [weddingDate,         setWeddingDate]         = useState("")
 	const [desiredDeliveryDate, setDesiredDeliveryDate] = useState("")
@@ -156,6 +163,16 @@ const NewOrder = () => {
 			.catch(() => toast.error("Impossibile caricare i servizi disponibili"))
 			.finally(() => setLoadingServices(false))
 	}, [])
+
+	// ─── Batch helpers ───────────────────────────────────────────────────────
+
+	const addBatchEntry = () => setBatchEntries((prev) => [...prev, { coupleName: "", weddingDate: "" }])
+
+	const removeBatchEntry = (idx: number) =>
+		setBatchEntries((prev) => prev.filter((_, i) => i !== idx))
+
+	const updateBatchEntry = (idx: number, field: "coupleName" | "weddingDate", value: string) =>
+		setBatchEntries((prev) => prev.map((e, i) => i === idx ? { ...e, [field]: value } : e))
 
 	// ─── Helpers selezione ────────────────────────────────────────────────────
 
@@ -240,8 +257,18 @@ const NewOrder = () => {
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault()
-		if (!coupleNames.trim())           { toast.error("Inserisci il nome della coppia");               return }
-		if (!weddingDate)                  { toast.error("Inserisci la data del matrimonio");              return }
+
+		// Validazione matrimoni
+		if (isBatch) {
+			for (let i = 0; i < batchEntries.length; i++) {
+				if (!batchEntries[i].coupleName.trim()) { toast.error(`Inserisci il nome della coppia per il matrimonio ${i + 1}`); return }
+				if (!batchEntries[i].weddingDate)       { toast.error(`Inserisci la data del matrimonio ${i + 1}`); return }
+			}
+		} else {
+			if (!coupleNames.trim()) { toast.error("Inserisci il nome della coppia"); return }
+			if (!weddingDate)        { toast.error("Inserisci la data del matrimonio"); return }
+		}
+
 		if (!desiredDeliveryDate)          { toast.error("Inserisci la data di consegna desiderata");      return }
 		if (selectedServices.length === 0) { toast.error("Seleziona almeno un servizio");                  return }
 		if (hasMissingTier)                { toast.error("Seleziona una fascia per ogni servizio scelto"); return }
@@ -274,9 +301,12 @@ const NewOrder = () => {
 				return entry
 			})
 
-			const payload = {
-				coupleName: coupleNames.trim(),
-				weddingDate,
+			const primaryCouple = isBatch ? batchEntries[0].coupleName.trim() : coupleNames.trim()
+			const primaryDate   = isBatch ? batchEntries[0].weddingDate : weddingDate
+
+			const payload: Record<string, any> = {
+				coupleName: primaryCouple,
+				weddingDate: primaryDate,
 				desiredDeliveryDate,
 				selectedServices: selectedServicesPayload,
 				deliveryMethod,
@@ -293,9 +323,14 @@ const NewOrder = () => {
 				cameraSurcharge,
 				totalPrice,
 			}
-			await genericPost("user/orders", payload)
+
+			if (isBatch && batchEntries.length > 1) {
+				payload.entries = batchEntries.map((e) => ({ coupleName: e.coupleName.trim(), weddingDate: e.weddingDate }))
+			}
+
+			const result = await genericPost("user/orders", payload)
 			toast.success("Ordine inviato con successo!")
-			navigate("/user/orders")
+			navigate(`/user/orders/${result.publicId}`)
 		} catch {
 			toast.error("Errore durante l'invio dell'ordine")
 		} finally {
@@ -479,33 +514,104 @@ const NewOrder = () => {
 
 							{/* Intestazione progetto */}
 							<div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 md:p-8 space-y-6">
-								<h1 className="text-2xl font-bold text-[#6d28d9]">Nuovo progetto</h1>
-								<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
-									<div className="sm:col-span-2">
-										<Input
-											name="coupleNames"
-											type="text"
-											label="Nomi della coppia"
-											value={coupleNames}
-											onChange={(e) => setCoupleNames(e.target.value)}
-											placeholder="Ad es. «Mario e Laura». Sarà il nome del progetto."
-										/>
+								<div className="flex flex-wrap items-center justify-between gap-3">
+									<h1 className="text-2xl font-bold text-[#6d28d9]">Nuovo progetto</h1>
+									{/* Toggle singolo / batch */}
+									<div className="flex items-center bg-gray-100 rounded-lg p-1 gap-0.5">
+										<button
+											type="button"
+											onClick={() => setIsBatch(false)}
+											className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${!isBatch ? "bg-white text-[#7c3aed] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+										>
+											<i className="fa-solid fa-rings-wedding mr-1.5 text-xs" />
+											Singolo
+										</button>
+										<button
+											type="button"
+											onClick={() => setIsBatch(true)}
+											className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${isBatch ? "bg-white text-[#7c3aed] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+										>
+											<i className="fa-solid fa-layer-group mr-1.5 text-xs" />
+											Batch
+										</button>
 									</div>
-									<div>
+								</div>
+
+								{isBatch ? (
+									/* Modalità batch: righe dinamiche */
+									<div className="space-y-3">
+										<p className="text-sm text-gray-500">Aggiungi tutti i matrimoni che condividono gli stessi servizi.</p>
+										{batchEntries.map((entry, idx) => (
+											<div key={idx} className="flex items-end gap-2 p-3 rounded-lg border border-gray-200 bg-gray-50">
+												<div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
+													<Input
+														name={`batch-couple-${idx}`}
+														type="text"
+														label={`Coppia ${idx + 1}`}
+														value={entry.coupleName}
+														onChange={(e) => updateBatchEntry(idx, "coupleName", e.target.value)}
+														placeholder="Es. Mario e Laura"
+													/>
+													<DateTimePicker
+														label="Data matrimonio"
+														value={entry.weddingDate || null}
+														onChange={(date) => updateBatchEntry(idx, "weddingDate", date ?? "")}
+													/>
+												</div>
+												{idx > 0 && (
+													<button
+														type="button"
+														onClick={() => removeBatchEntry(idx)}
+														className="mb-1 flex items-center justify-center w-8 h-8 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition-colors cursor-pointer shrink-0"
+													>
+														<i className="fa-solid fa-times text-xs" />
+													</button>
+												)}
+											</div>
+										))}
+										<button
+											type="button"
+											onClick={addBatchEntry}
+											className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border border-dashed border-[#c4b5fd] text-[#7c3aed] text-sm font-medium hover:bg-[#f5f3ff] transition-colors cursor-pointer"
+										>
+											<i className="fa-solid fa-plus text-xs" />
+											Aggiungi matrimonio
+										</button>
 										<DateTimePicker
-											label="Data del matrimonio"
-											value={weddingDate || null}
-											onChange={(date) => setWeddingDate(date ?? "")}
-										/>
-									</div>
-									<div>
-										<DateTimePicker
-											label="Data di consegna desiderata"
+											label="Data di consegna desiderata (comune)"
 											value={desiredDeliveryDate || null}
 											onChange={(date) => setDesiredDeliveryDate(date ?? "")}
 										/>
 									</div>
-								</div>
+								) : (
+									/* Modalità singola */
+									<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+										<div className="sm:col-span-2">
+											<Input
+												name="coupleNames"
+												type="text"
+												label="Nomi della coppia"
+												value={coupleNames}
+												onChange={(e) => setCoupleNames(e.target.value)}
+												placeholder="Ad es. «Mario e Laura». Sarà il nome del progetto."
+											/>
+										</div>
+										<div>
+											<DateTimePicker
+												label="Data del matrimonio"
+												value={weddingDate || null}
+												onChange={(date) => setWeddingDate(date ?? "")}
+											/>
+										</div>
+										<div>
+											<DateTimePicker
+												label="Data di consegna desiderata"
+												value={desiredDeliveryDate || null}
+												onChange={(date) => setDesiredDeliveryDate(date ?? "")}
+											/>
+										</div>
+									</div>
+								)}
 							</div>
 
 							{/* Selezione servizi */}

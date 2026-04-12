@@ -4,11 +4,21 @@ import { toast } from "react-toastify"
 import {
 	genericGet, genericPatch, genericDelete,
 	getInvoiceUploadUrl, uploadFileToS3, getInvoiceDownloadUrl, deleteInvoice,
+	updateOrderEntry, addOrderEntry, deleteOrderEntry,
 } from "../../../services/api-utility"
 import DeleteModal from "../../../Components/DeleteModal"
 import DateTimePicker from "../../../Components/DateTimePicker"
 
 // ─── Tipi ────────────────────────────────────────────────────────────────────
+
+interface OrderEntry {
+	publicId: string
+	coupleName: string
+	weddingDate: string
+	status: "pending" | "in_progress" | "completed" | "cancelled"
+	adminNotes?: string | null
+	deliveryLink?: string | null
+}
 
 interface SelectedService {
 	publicId: string
@@ -45,6 +55,7 @@ interface Order {
 	deliveryLink?: string
 	desiredDeliveryDate?: string
 	invoiceUrl?: string | null
+	entries?: OrderEntry[]
 	createdAt: string
 	updatedAt: string
 }
@@ -143,6 +154,14 @@ const AdminOrderDetail = () => {
 	const [invoiceKey,         setInvoiceKey]          = useState("") // chiave S3
 	const [saving,             setSaving]              = useState(false)
 	const [uploadingInvoice,   setUploadingInvoice]    = useState(false)
+
+	// Entries (matrimoni batch)
+	const [expandedEntry,  setExpandedEntry]  = useState<string | null>(null)
+	const [entryEdits,     setEntryEdits]     = useState<Record<string, Partial<OrderEntry>>>({})
+	const [savingEntry,    setSavingEntry]    = useState<string | null>(null)
+	const [addingEntry,    setAddingEntry]    = useState(false)
+	const [newEntryName,   setNewEntryName]   = useState("")
+	const [newEntryDate,   setNewEntryDate]   = useState("")
 
 	// Modali
 	const [deleteOpen,      setDeleteOpen]      = useState(false)
@@ -300,6 +319,72 @@ const AdminOrderDetail = () => {
 		}
 	}
 
+	// ── Entry: salva ─────────────────────────────────────────────────────────
+
+	const handleSaveEntry = async (entryPublicId: string) => {
+		if (!publicId) return
+		const edits = entryEdits[entryPublicId]
+		if (!edits || Object.keys(edits).length === 0) { setExpandedEntry(null); return }
+		setSavingEntry(entryPublicId)
+		try {
+			await updateOrderEntry(publicId, entryPublicId, edits)
+			setOrder((prev) => {
+				if (!prev) return prev
+				const newEntries = (prev.entries ?? []).map((e) =>
+					e.publicId === entryPublicId ? { ...e, ...edits } : e
+				)
+				// aggiorna status ordine padre: se tutte le entry sono completate/cancellate → completed
+				const statuses = newEntries.map((e) => e.status)
+				const allDone = statuses.every((s) => s === "completed" || s === "cancelled")
+				const anyInProgress = statuses.some((s) => s === "in_progress")
+				const allPending = statuses.every((s) => s === "pending")
+				const newStatus = allPending ? "pending" : allDone ? "completed" : anyInProgress ? "in_progress" : prev.status
+				return { ...prev, status: newStatus as Order["status"], entries: newEntries }
+			})
+			setEntryEdits((prev) => { const n = { ...prev }; delete n[entryPublicId]; return n })
+			setExpandedEntry(null)
+			toast.success("Matrimonio aggiornato")
+		} catch {
+			toast.error("Errore durante il salvataggio")
+		} finally {
+			setSavingEntry(null)
+		}
+	}
+
+	// ── Entry: aggiungi ───────────────────────────────────────────────────────
+
+	const handleAddEntry = async () => {
+		if (!publicId) return
+		if (!newEntryName.trim()) { toast.error("Inserisci il nome della coppia"); return }
+		if (!newEntryDate) { toast.error("Inserisci la data del matrimonio"); return }
+		try {
+			const newEntry = await addOrderEntry(publicId, { coupleName: newEntryName.trim(), weddingDate: newEntryDate })
+			setOrder((prev) => prev ? { ...prev, entries: [...(prev.entries ?? []), newEntry] } : prev)
+			setNewEntryName("")
+			setNewEntryDate("")
+			setAddingEntry(false)
+			toast.success("Matrimonio aggiunto")
+		} catch {
+			toast.error("Errore durante l'aggiunta")
+		}
+	}
+
+	// ── Entry: elimina ────────────────────────────────────────────────────────
+
+	const handleDeleteEntry = async (entryPublicId: string) => {
+		if (!publicId) return
+		try {
+			await deleteOrderEntry(publicId, entryPublicId)
+			setOrder((prev) => {
+				if (!prev) return prev
+				return { ...prev, entries: (prev.entries ?? []).filter((e) => e.publicId !== entryPublicId) }
+			})
+			toast.success("Matrimonio rimosso")
+		} catch (err: any) {
+			toast.error(err?.response?.data?.message ?? "Errore durante la rimozione")
+		}
+	}
+
 	// ── Loading / empty ───────────────────────────────────────────────────────
 
 	if (loading) {
@@ -330,7 +415,10 @@ const AdminOrderDetail = () => {
 						Ordini
 					</button>
 					<i className="fa-solid fa-chevron-right text-xs text-gray-400" />
-					<span className="text-gray-600 truncate">{order.coupleName}</span>
+					<span className="text-gray-600 truncate">
+						{order.entries && order.entries.length > 0 ? order.entries[0].coupleName : order.coupleName}
+						{order.entries && order.entries.length > 1 && ` (+${order.entries.length - 1})`}
+					</span>
 				</div>
 
 				<div className="flex flex-col lg:flex-row gap-6">
@@ -343,12 +431,160 @@ const AdminOrderDetail = () => {
 							<h2 className="text-base font-semibold text-gray-800 mb-4">Info ordine</h2>
 							<InfoRow label="ID" value={order.publicId} />
 							<InfoRow label="Utente" value={order.userEmail} />
-							<InfoRow label="Coppia" value={order.coupleName} />
-							<InfoRow label="Matrimonio" value={new Date(order.weddingDate).toLocaleDateString("it-IT")} />
-							<InfoRow label="Consegna desiderata" value={order.desiredDeliveryDate ? new Date(order.desiredDeliveryDate).toLocaleDateString("it-IT") : undefined} />
 							<InfoRow label="Telecamere" value={order.cameraCount} />
 							<InfoRow label="Creato il" value={new Date(order.createdAt).toLocaleString("it-IT")} />
 							<InfoRow label="Aggiornato il" value={new Date(order.updatedAt).toLocaleString("it-IT")} />
+						</div>
+
+						{/* Matrimoni */}
+						<div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
+							<div className="flex items-center justify-between mb-4">
+								<h2 className="text-base font-semibold text-gray-800">
+									Matrimoni
+									{order.entries && order.entries.length > 1 && (
+										<span className="ml-2 text-xs font-normal text-gray-400">({order.entries.length})</span>
+									)}
+								</h2>
+							</div>
+
+							<div className="space-y-2">
+								{(order.entries ?? []).map((entry) => {
+									const isExpanded = expandedEntry === entry.publicId
+									const edits = entryEdits[entry.publicId] ?? {}
+									return (
+										<div key={entry.publicId} className="rounded-lg border border-gray-200 overflow-hidden">
+											{/* Header riga */}
+											<button
+												type="button"
+												onClick={() => setExpandedEntry(isExpanded ? null : entry.publicId)}
+												className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors cursor-pointer"
+											>
+												<div className="flex items-center gap-3 min-w-0 flex-1">
+													<div className="min-w-0">
+														<p className="font-semibold text-gray-900 text-sm truncate">{entry.coupleName}</p>
+														<p className="text-xs text-gray-500">{new Date(entry.weddingDate).toLocaleDateString("it-IT")}</p>
+													</div>
+													<span className={`shrink-0 inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_CLASSES[edits.status ?? entry.status] ?? "bg-gray-100 text-gray-600"}`}>
+														{STATUS_LABELS[edits.status ?? entry.status] ?? entry.status}
+													</span>
+												</div>
+												<i className={`fa-solid fa-chevron-${isExpanded ? "up" : "down"} text-gray-400 text-xs shrink-0`} />
+											</button>
+
+											{/* Body espandibile */}
+											{isExpanded && (
+												<div className="border-t border-gray-100 p-4 space-y-3 bg-gray-50/50">
+													{/* Status */}
+													<div>
+														<label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Stato</label>
+														<select
+															value={edits.status ?? entry.status}
+															onChange={(e) => setEntryEdits((prev) => ({ ...prev, [entry.publicId]: { ...(prev[entry.publicId] ?? {}), status: e.target.value as OrderEntry["status"] } }))}
+															className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
+														>
+															<option value="pending">In attesa</option>
+															<option value="in_progress">In lavorazione</option>
+															<option value="completed">Completato</option>
+															<option value="cancelled">Annullato</option>
+														</select>
+													</div>
+													{/* Note admin */}
+													<div>
+														<label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Note per il cliente</label>
+														<textarea
+															rows={2}
+															value={edits.adminNotes ?? entry.adminNotes ?? ""}
+															onChange={(e) => setEntryEdits((prev) => ({ ...prev, [entry.publicId]: { ...(prev[entry.publicId] ?? {}), adminNotes: e.target.value } }))}
+															placeholder="Note visibili al cliente per questo matrimonio…"
+															className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500 resize-none"
+														/>
+													</div>
+													{/* Delivery link */}
+													<div>
+														<label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Link di consegna</label>
+														<input
+															type="url"
+															value={edits.deliveryLink ?? entry.deliveryLink ?? ""}
+															onChange={(e) => setEntryEdits((prev) => ({ ...prev, [entry.publicId]: { ...(prev[entry.publicId] ?? {}), deliveryLink: e.target.value } }))}
+															placeholder="https://…"
+															className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
+														/>
+													</div>
+													{/* Azioni */}
+													<div className="flex items-center gap-2 pt-1">
+														<button
+															type="button"
+															onClick={() => handleSaveEntry(entry.publicId)}
+															disabled={savingEntry === entry.publicId}
+															className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-violet-600 text-white text-xs font-medium hover:bg-violet-700 disabled:opacity-50 transition-colors cursor-pointer"
+														>
+															{savingEntry === entry.publicId
+																? <><i className="fa-solid fa-spinner fa-spin" /> Salvataggio…</>
+																: <><i className="fa-solid fa-floppy-disk" /> Salva</>
+															}
+														</button>
+														{(order.entries ?? []).length > 1 && (
+															<button
+																type="button"
+																onClick={() => handleDeleteEntry(entry.publicId)}
+																className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-red-200 text-red-600 text-xs font-medium hover:bg-red-50 transition-colors cursor-pointer"
+																title="Rimuovi matrimonio"
+															>
+																<i className="fa-solid fa-trash text-[10px]" />
+															</button>
+														)}
+													</div>
+												</div>
+											)}
+										</div>
+									)
+								})}
+							</div>
+
+							{/* Aggiungi matrimonio */}
+							{addingEntry ? (
+								<div className="mt-3 rounded-lg border border-violet-200 bg-violet-50 p-3 space-y-2">
+									<p className="text-xs font-semibold text-violet-700 uppercase tracking-wide">Nuovo matrimonio</p>
+									<input
+										type="text"
+										value={newEntryName}
+										onChange={(e) => setNewEntryName(e.target.value)}
+										placeholder="Nome della coppia…"
+										className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
+									/>
+									<input
+										type="date"
+										value={newEntryDate}
+										onChange={(e) => setNewEntryDate(e.target.value)}
+										className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
+									/>
+									<div className="flex gap-2">
+										<button
+											type="button"
+											onClick={handleAddEntry}
+											className="flex-1 px-3 py-1.5 rounded-lg bg-violet-600 text-white text-xs font-medium hover:bg-violet-700 transition-colors cursor-pointer"
+										>
+											Aggiungi
+										</button>
+										<button
+											type="button"
+											onClick={() => { setAddingEntry(false); setNewEntryName(""); setNewEntryDate("") }}
+											className="px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
+										>
+											Annulla
+										</button>
+									</div>
+								</div>
+							) : (
+								<button
+									type="button"
+									onClick={() => setAddingEntry(true)}
+									className="mt-3 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-violet-300 text-violet-600 text-xs font-medium hover:bg-violet-50 transition-colors cursor-pointer"
+								>
+									<i className="fa-solid fa-plus text-[10px]" />
+									Aggiungi matrimonio
+								</button>
+							)}
 						</div>
 
 						{/* Servizi */}

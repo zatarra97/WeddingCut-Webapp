@@ -12,6 +12,9 @@ interface Order {
 	totalPrice: number | null
 	status: "pending" | "in_progress" | "completed" | "cancelled"
 	createdAt: string
+	entryCount?: number
+	primaryCoupleName?: string
+	entries?: { coupleName: string; weddingDate: string }[]
 }
 
 const TABS = [
@@ -63,7 +66,9 @@ const Dashboard = () => {
 			if (activeTabDef.statusFilter && o.status !== activeTabDef.statusFilter) return false
 			if (search.trim()) {
 				const q = search.trim().toLowerCase()
-				return o.coupleName.toLowerCase().includes(q)
+				const matchPrimary = (o.primaryCoupleName || o.coupleName).toLowerCase().includes(q)
+				const matchEntries = o.entries?.some((e) => e.coupleName.toLowerCase().includes(q)) ?? false
+				return matchPrimary || matchEntries
 			}
 			return true
 		})
@@ -172,16 +177,28 @@ const Dashboard = () => {
 									{/* Left: names + dates */}
 									<div className="flex-1 min-w-0">
 										<div className="flex items-center gap-3 flex-wrap">
-											<h2 className="text-base font-bold text-gray-900 truncate">{order.coupleName}</h2>
+											<h2 className="text-base font-bold text-gray-900 truncate">{order.primaryCoupleName || order.coupleName}</h2>
+											{(order.entryCount ?? 1) > 1 && (
+												<span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#ede9fe] text-[#7c3aed]">
+													+{(order.entryCount ?? 1) - 1} matrimoni
+												</span>
+											)}
 											<span className={`inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full ${STATUS_CLASSES[order.status] ?? "bg-gray-100 text-gray-600"}`}>
 												{STATUS_LABELS[order.status] ?? order.status}
 											</span>
 										</div>
 										<div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5 text-sm text-gray-500">
-											<span>
-												<i className="fa-solid fa-ring text-[10px] mr-1.5 text-[#a78bfa]" aria-hidden />
-												{formatDate(order.weddingDate)}
-											</span>
+											{(order.entryCount ?? 1) > 1 ? (
+												<span>
+													<i className="fa-solid fa-rings-wedding text-[10px] mr-1.5 text-[#a78bfa]" aria-hidden />
+													{order.entryCount} matrimoni
+												</span>
+											) : (
+												<span>
+													<i className="fa-solid fa-ring text-[10px] mr-1.5 text-[#a78bfa]" aria-hidden />
+													{formatDate(order.weddingDate)}
+												</span>
+											)}
 											{order.desiredDeliveryDate && (
 												<span>
 													<i className="fa-solid fa-calendar-check text-[10px] mr-1.5 text-[#a78bfa]" aria-hidden />
