@@ -147,7 +147,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, userEmail, onLogout
 			</aside>
 
 			{/* ── Right side ───────────────────────────────────────────── */}
-			<div className="flex flex-col flex-1 min-w-0">
+			<div className="flex flex-col flex-1 min-w-0 overflow-x-hidden">
 
 				{/* Top bar */}
 				<header className="flex items-center h-16 px-5 bg-white border-b border-gray-200 shrink-0 gap-4">
