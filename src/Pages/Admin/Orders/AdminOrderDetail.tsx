@@ -20,10 +20,17 @@ interface OrderEntry {
 	deliveryLink?: string | null
 	// Per-entry service config
 	selectedServices?: SelectedService[] | string | null
+	deliveryMethod?: "cloud_link" | "upload_request" | null
+	materialLink?: string | null
+	materialSizeGb?: number | null
+	cameraCount?: "1-4" | "5-6" | "7+" | null
+	exportFps?: string | null
+	exportBitrate?: string | null
+	exportAspect?: string | null
+	exportResolution?: string | null
 	servicesTotal?: number | null
 	cameraSurcharge?: number | null
 	totalPrice?: number | null
-	cameraCount?: "1-4" | "5-6" | "7+" | null
 }
 
 interface SelectedService {
@@ -88,21 +95,37 @@ const STATUS_LABELS: Record<string, string> = {
 	cancelled:   "Annullato",
 }
 
-const PRICING_TYPE_LABELS: Record<string, string> = {
-	fixed:      "Prezzo fisso",
-	tiered:     "A fasce",
-	percentage: "Percentuale",
-}
-
-const PRICING_TYPE_CLASSES: Record<string, string> = {
-	fixed:      "bg-blue-50 text-blue-700",
-	tiered:     "bg-violet-50 text-violet-700",
-	percentage: "bg-amber-50 text-amber-700",
-}
-
 const DELIVERY_LABELS: Record<string, string> = {
-	cloud_link:     "Link cloud",
-	upload_request: "Link di caricamento richiesto",
+	cloud_link:     "Ho già caricato il materiale",
+	upload_request: "Richiedi link di caricamento",
+}
+
+const DELIVERY_ICONS: Record<string, string> = {
+	cloud_link:     "fa-cloud",
+	upload_request: "fa-cloud-arrow-up",
+}
+
+const CAMERA_OPTIONS = [
+	{ value: "1-4", label: "1 – 4 cam", surcharge: 0 },
+	{ value: "5-6", label: "5 – 6 cam", surcharge: 50 },
+	{ value: "7+",  label: "7+ cam",    surcharge: 100 },
+]
+
+const EXPORT_FPS_LABELS: Record<string, string> = {
+	"25": "25 fps — PAL",
+	"30": "30 fps — NTSC",
+}
+const EXPORT_BITRATE_LABELS: Record<string, string> = {
+	"20": "20 Mbps",
+	"50": "50 Mbps",
+}
+const EXPORT_ASPECT_LABELS: Record<string, string> = {
+	"16:9": "16:9 Widescreen",
+	"9:16": "9:16 Verticale",
+}
+const EXPORT_RESOLUTION_LABELS: Record<string, string> = {
+	"1920x1080": "1080p Full HD",
+	"3840x2160": "4K Ultra HD",
 }
 
 const MAX_INVOICE_SIZE = 10 * 1024 * 1024 // 10 MB
@@ -114,14 +137,6 @@ function formatDuration(minutes: number): string {
 	const secs = Math.round((minutes - mins) * 60)
 	if (secs === 0) return `${mins} min`
 	return `${mins}min ${secs}s`
-}
-
-function parseServices(raw: SelectedService[] | string): SelectedService[] {
-	if (Array.isArray(raw)) return raw
-	if (typeof raw === "string") {
-		try { return JSON.parse(raw) } catch { return [] }
-	}
-	return []
 }
 
 function invoiceFilename(key: string): string {
@@ -436,127 +451,266 @@ const AdminOrderDetail = () => {
 							<InfoRow label="Aggiornato il" value={new Date(order.updatedAt).toLocaleString("it-IT")} />
 						</div>
 
-						{/* Matrimoni */}
-						<div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
-							<div className="flex items-center justify-between mb-4">
-								<h2 className="text-base font-semibold text-gray-800">
-									Matrimoni
+						{/* Matrimoni — accordion per-entry */}
+						<div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+							<div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+								<div>
+									<h2 className="text-base font-semibold text-gray-800">Matrimoni</h2>
 									{order.entries && order.entries.length > 1 && (
-										<span className="ml-2 text-xs font-normal text-gray-400">({order.entries.length})</span>
+										<p className="text-xs text-gray-400 mt-0.5">{order.entries.length} matrimoni in questo ordine</p>
 									)}
-								</h2>
+								</div>
 							</div>
 
-							<div className="space-y-2">
-								{(order.entries ?? []).map((entry) => {
+							<div className="divide-y divide-gray-100">
+								{(order.entries ?? []).map((entry, entryIdx) => {
 									const isExpanded = expandedEntry === entry.publicId
 									const edits = entryEdits[entry.publicId] ?? {}
+									const svcs: SelectedService[] = (() => {
+										if (!entry.selectedServices) return []
+										if (Array.isArray(entry.selectedServices)) return entry.selectedServices as SelectedService[]
+										try { return JSON.parse(entry.selectedServices as string) as SelectedService[] } catch { return [] }
+									})()
+									const hasExport = entry.exportFps || entry.exportBitrate || entry.exportAspect || entry.exportResolution
+									const entryStatus = (edits.status ?? entry.status) as string
 									return (
-										<div key={entry.publicId} className="rounded-lg border border-gray-200 overflow-hidden">
-											{/* Header riga */}
+										<div key={entry.publicId}>
+											{/* Header accordion */}
 											<button
 												type="button"
 												onClick={() => setExpandedEntry(isExpanded ? null : entry.publicId)}
-												className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors cursor-pointer"
+												className="w-full flex items-center gap-4 px-6 py-4 text-left hover:bg-gray-50 transition-colors cursor-pointer"
 											>
-												<div className="flex items-center gap-3 min-w-0 flex-1">
-													<div className="min-w-0">
-														<p className="font-semibold text-gray-900 text-sm truncate">{entry.coupleName}</p>
-														<p className="text-xs text-gray-500">{new Date(entry.weddingDate).toLocaleDateString("it-IT")}</p>
-													</div>
-																			</div>
+												{/* Numero */}
+												<div className="w-7 h-7 rounded-full bg-violet-100 text-violet-700 text-xs font-bold flex items-center justify-center shrink-0">
+													{entryIdx + 1}
+												</div>
+												{/* Info coppia */}
+												<div className="flex-1 min-w-0">
+													<p className="font-semibold text-gray-900 text-sm truncate">{entry.coupleName}</p>
+													<p className="text-xs text-gray-400 mt-0.5">
+														<i className="fa-solid fa-ring text-[9px] mr-1 text-violet-300" />
+														{new Date(entry.weddingDate).toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}
+													</p>
+												</div>
+												{/* Status badge */}
+												<span className={`hidden sm:inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${STATUS_CLASSES[entry.status] ?? "bg-gray-100 text-gray-600"}`}>
+													{STATUS_LABELS[entry.status] ?? entry.status}
+												</span>
+												{/* Prezzo */}
+												{entry.totalPrice != null && (
+													<span className="text-sm font-bold text-violet-700 shrink-0">€{Number(entry.totalPrice).toFixed(2)}</span>
+												)}
 												<i className={`fa-solid fa-chevron-${isExpanded ? "up" : "down"} text-gray-400 text-xs shrink-0`} />
 											</button>
 
-											{/* Body espandibile */}
+											{/* Body accordion */}
 											{isExpanded && (
-												<div className="border-t border-gray-100 p-4 space-y-3 bg-gray-50/50">
-													{/* Servizi entry (read-only) */}
-													{(() => {
-														const svcs: SelectedService[] = (() => {
-															if (!entry.selectedServices) return []
-															if (Array.isArray(entry.selectedServices)) return entry.selectedServices as SelectedService[]
-															try { return JSON.parse(entry.selectedServices as string) as SelectedService[] } catch { return [] }
-														})()
-														if (svcs.length === 0) return null
-														return (
+												<div className="border-t border-gray-100">
+
+													{/* ── Sezione cliente ── */}
+													<div className="px-6 py-5 space-y-6 bg-gray-50/60">
+
+														{/* Servizi */}
+														{svcs.length > 0 && (
 															<div>
-																<p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Servizi</p>
-																<div className="space-y-1">
+																<p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Servizi</p>
+																<div className="space-y-2">
 																	{svcs.map((svc) => (
-																		<div key={svc.publicId} className="flex justify-between items-start text-xs gap-2">
-																			<span className="text-gray-600">
-																				{svc.name}
-																				{svc.tierLabel && <span className="text-gray-400 ml-1">({svc.tierLabel})</span>}
-																			</span>
-																			<span className="font-medium text-gray-800 shrink-0">
-																				{svc.pricingType === "percentage"
-																					? <span className="text-violet-600">+{svc.percentageValue}%{svc.price != null && svc.price > 0 ? ` (€${Number(svc.price).toFixed(2)})` : ""}</span>
-																					: svc.price != null ? `€${Number(svc.price).toFixed(2)}` : "—"}
-																			</span>
+																		<div key={svc.publicId} className="rounded-lg border border-gray-200 bg-white p-3">
+																			<div className="flex items-start justify-between gap-3">
+																				<div className="flex-1 min-w-0">
+																					<p className="font-semibold text-gray-900 text-sm">{svc.name}</p>
+																					{svc.tierLabel && (
+																						<div className="flex items-center gap-2 mt-1.5">
+																							<span className="inline-flex items-center px-2 py-0.5 rounded-md bg-violet-600 text-white text-xs font-semibold">{svc.tierLabel}</span>
+																							{svc.duration != null && (
+																								<span className="text-xs text-gray-400">
+																									<i className="fa-regular fa-clock mr-1" />{formatDuration(svc.duration)}
+																								</span>
+																							)}
+																						</div>
+																					)}
+																					{svc.notes && (
+																						<p className="text-xs text-gray-500 mt-1.5 bg-gray-50 rounded px-2 py-1 border border-gray-100">{svc.notes}</p>
+																					)}
+																				</div>
+																				<div className="shrink-0 text-right">
+																					{svc.pricingType === "percentage" ? (
+																						<span className="text-sm font-semibold text-amber-600">
+																							+{svc.percentageValue}%
+																							{svc.price != null && svc.price > 0 && <span className="block text-xs font-normal text-gray-500">€{Number(svc.price).toFixed(2)}</span>}
+																						</span>
+																					) : svc.price != null ? (
+																						<span className="text-sm font-semibold text-gray-900">€{Number(svc.price).toFixed(2)}</span>
+																					) : null}
+																				</div>
+																			</div>
 																		</div>
 																	))}
+																</div>
+																{/* Totali entry */}
+																<div className="mt-3 space-y-1 rounded-lg border border-gray-200 bg-white p-3">
+																	{entry.servicesTotal != null && (
+																		<div className="flex justify-between text-xs text-gray-500">
+																			<span>Subtotale servizi</span>
+																			<span>€{Number(entry.servicesTotal).toFixed(2)}</span>
+																		</div>
+																	)}
 																	{entry.cameraSurcharge != null && Number(entry.cameraSurcharge) > 0 && (
-																		<div className="flex justify-between text-xs gap-2">
-																			<span className="text-gray-500">Supplemento multi-camera ({entry.cameraCount})</span>
-																			<span className="font-medium text-orange-600 shrink-0">+€{Number(entry.cameraSurcharge).toFixed(2)}</span>
+																		<div className="flex justify-between text-xs text-orange-600">
+																			<span>Supplemento multi-camera</span>
+																			<span>+€{Number(entry.cameraSurcharge).toFixed(2)}</span>
 																		</div>
 																	)}
 																	{entry.totalPrice != null && (
-																		<div className="flex justify-between text-xs font-semibold border-t border-gray-200 mt-1 pt-1">
-																			<span className="text-gray-700">Totale matrimonio</span>
-																			<span className="text-violet-600">€{Number(entry.totalPrice).toFixed(2)}</span>
+																		<div className="flex justify-between text-sm font-bold border-t border-gray-100 pt-1.5 mt-1">
+																			<span className="text-gray-800">Totale matrimonio</span>
+																			<span className="text-violet-700">€{Number(entry.totalPrice).toFixed(2)}</span>
 																		</div>
 																	)}
 																</div>
 															</div>
-														)
-													})()}
-													{/* Note admin */}
-													<div>
-														<label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Note per il cliente</label>
-														<textarea
-															rows={2}
-															value={edits.adminNotes ?? entry.adminNotes ?? ""}
-															onChange={(e) => setEntryEdits((prev) => ({ ...prev, [entry.publicId]: { ...(prev[entry.publicId] ?? {}), adminNotes: e.target.value } }))}
-															placeholder="Note visibili al cliente per questo matrimonio…"
-															className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500 resize-none"
-														/>
+														)}
+
+														{/* Materiale + Telecamere */}
+														<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+															{entry.deliveryMethod && (
+																<div>
+																	<p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Materiale</p>
+																	<div className="rounded-lg border border-gray-200 bg-white p-3 space-y-1.5">
+																		<div className="flex items-center gap-2 text-sm text-gray-700">
+																			<i className={`fa-solid ${DELIVERY_ICONS[entry.deliveryMethod] ?? "fa-cloud"} text-violet-400`} />
+																			<span className="font-medium">{DELIVERY_LABELS[entry.deliveryMethod] ?? entry.deliveryMethod}</span>
+																		</div>
+																		{entry.deliveryMethod === "cloud_link" && entry.materialLink && (
+																			<a href={entry.materialLink} target="_blank" rel="noopener noreferrer" className="block text-xs text-violet-600 underline truncate">{entry.materialLink}</a>
+																		)}
+																		{entry.materialSizeGb != null && (
+																			<p className="text-xs text-gray-500"><i className="fa-solid fa-hard-drive mr-1" />{entry.materialSizeGb} GB</p>
+																		)}
+																	</div>
+																</div>
+															)}
+															{entry.cameraCount && (
+																<div>
+																	<p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Telecamere</p>
+																	<div className="flex gap-2">
+																		{CAMERA_OPTIONS.map((opt) => {
+																			const active = entry.cameraCount === opt.value
+																			return (
+																				<div key={opt.value} className={`flex-1 flex flex-col items-center gap-1 py-2 rounded-lg border-2 text-center ${active ? "border-violet-500 bg-violet-50" : "border-gray-200 opacity-40"}`}>
+																					<i className={`fa-solid fa-video text-lg ${active ? "text-violet-600" : "text-gray-400"}`} />
+																					<span className={`text-xs font-bold ${active ? "text-violet-700" : "text-gray-600"}`}>{opt.label}</span>
+																					{opt.surcharge > 0
+																						? <span className={`text-[10px] ${active ? "text-violet-500" : "text-orange-400"}`}>+€{opt.surcharge}</span>
+																						: <span className="text-[10px] text-gray-400">Incluso</span>
+																					}
+																				</div>
+																			)
+																		})}
+																	</div>
+																</div>
+															)}
+														</div>
+
+														{/* Export */}
+														{hasExport && (
+															<div>
+																<p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Esportazione</p>
+																<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+																	{entry.exportFps && (
+																		<div className="rounded-lg border border-gray-200 bg-white px-3 py-2">
+																			<p className="text-[10px] text-gray-400 uppercase tracking-wide">FPS</p>
+																			<p className="text-sm font-semibold text-gray-800 mt-0.5">{EXPORT_FPS_LABELS[entry.exportFps] ?? entry.exportFps}</p>
+																		</div>
+																	)}
+																	{entry.exportBitrate && (
+																		<div className="rounded-lg border border-gray-200 bg-white px-3 py-2">
+																			<p className="text-[10px] text-gray-400 uppercase tracking-wide">Bitrate</p>
+																			<p className="text-sm font-semibold text-gray-800 mt-0.5">{EXPORT_BITRATE_LABELS[entry.exportBitrate] ?? entry.exportBitrate}</p>
+																		</div>
+																	)}
+																	{entry.exportAspect && (
+																		<div className="rounded-lg border border-gray-200 bg-white px-3 py-2">
+																			<p className="text-[10px] text-gray-400 uppercase tracking-wide">Formato</p>
+																			<p className="text-sm font-semibold text-gray-800 mt-0.5">{EXPORT_ASPECT_LABELS[entry.exportAspect] ?? entry.exportAspect}</p>
+																		</div>
+																	)}
+																	{entry.exportResolution && (
+																		<div className="rounded-lg border border-gray-200 bg-white px-3 py-2">
+																			<p className="text-[10px] text-gray-400 uppercase tracking-wide">Risoluzione</p>
+																			<p className="text-sm font-semibold text-gray-800 mt-0.5">{EXPORT_RESOLUTION_LABELS[entry.exportResolution] ?? entry.exportResolution}</p>
+																		</div>
+																	)}
+																</div>
+															</div>
+														)}
 													</div>
-													{/* Delivery link */}
-													<div>
-														<label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Link di consegna</label>
-														<input
-															type="url"
-															value={edits.deliveryLink ?? entry.deliveryLink ?? ""}
-															onChange={(e) => setEntryEdits((prev) => ({ ...prev, [entry.publicId]: { ...(prev[entry.publicId] ?? {}), deliveryLink: e.target.value } }))}
-															placeholder="https://…"
-															className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
-														/>
+
+													{/* ── Sezione admin ── */}
+													<div className="border-t border-violet-100 bg-violet-50/40 px-6 py-3">
+														<p className="text-xs font-semibold text-violet-500 uppercase tracking-wide">Azioni amministratore</p>
 													</div>
-													{/* Azioni */}
-													<div className="flex items-center gap-2 pt-1">
-														<button
-															type="button"
-															onClick={() => handleSaveEntry(entry.publicId)}
-															disabled={savingEntry === entry.publicId}
-															className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-violet-600 text-white text-xs font-medium hover:bg-violet-700 disabled:opacity-50 transition-colors cursor-pointer"
-														>
-															{savingEntry === entry.publicId
-																? <><i className="fa-solid fa-spinner fa-spin" /> Salvataggio…</>
-																: <><i className="fa-solid fa-floppy-disk" /> Salva</>
-															}
-														</button>
-														{(order.entries ?? []).length > 1 && (
+													<div className="px-6 py-5 space-y-4">
+														{/* Stato entry */}
+														<div>
+															<label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Stato</label>
+															<select
+																value={entryStatus}
+																onChange={(e) => setEntryEdits((prev) => ({ ...prev, [entry.publicId]: { ...(prev[entry.publicId] ?? {}), status: e.target.value as OrderEntry["status"] } }))}
+																className={`block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500 ${STATUS_CLASSES[entryStatus] ?? ""}`}
+															>
+																{["pending", "in_progress", "completed", "cancelled"].map((s) => (
+																	<option key={s} value={s}>{STATUS_LABELS[s] ?? s}</option>
+																))}
+															</select>
+														</div>
+														{/* Note admin */}
+														<div>
+															<label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Note per il cliente</label>
+															<textarea
+																rows={3}
+																value={edits.adminNotes ?? entry.adminNotes ?? ""}
+																onChange={(e) => setEntryEdits((prev) => ({ ...prev, [entry.publicId]: { ...(prev[entry.publicId] ?? {}), adminNotes: e.target.value } }))}
+																placeholder="Note visibili al cliente per questo matrimonio…"
+																className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500 resize-none"
+															/>
+														</div>
+														{/* Delivery link */}
+														<div>
+															<label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Link di consegna</label>
+															<input
+																type="url"
+																value={edits.deliveryLink ?? entry.deliveryLink ?? ""}
+																onChange={(e) => setEntryEdits((prev) => ({ ...prev, [entry.publicId]: { ...(prev[entry.publicId] ?? {}), deliveryLink: e.target.value } }))}
+																placeholder="https://…"
+																className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
+															/>
+														</div>
+														{/* Azioni */}
+														<div className="flex items-center gap-2">
 															<button
 																type="button"
-																onClick={() => handleDeleteEntry(entry.publicId)}
-																className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-red-200 text-red-600 text-xs font-medium hover:bg-red-50 transition-colors cursor-pointer"
-																title="Rimuovi matrimonio"
+																onClick={() => handleSaveEntry(entry.publicId)}
+																disabled={savingEntry === entry.publicId}
+																className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 disabled:opacity-50 transition-colors cursor-pointer"
 															>
-																<i className="fa-solid fa-trash text-[10px]" />
+																{savingEntry === entry.publicId
+																	? <><i className="fa-solid fa-spinner fa-spin" /> Salvataggio…</>
+																	: <><i className="fa-solid fa-floppy-disk" /> Salva modifiche</>
+																}
 															</button>
-														)}
+															{(order.entries ?? []).length > 1 && (
+																<button
+																	type="button"
+																	onClick={() => handleDeleteEntry(entry.publicId)}
+																	className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors cursor-pointer"
+																>
+																	<i className="fa-solid fa-trash text-xs" />
+																</button>
+															)}
+														</div>
 													</div>
 												</div>
 											)}
@@ -567,7 +721,7 @@ const AdminOrderDetail = () => {
 
 							{/* Aggiungi matrimonio */}
 							{addingEntry ? (
-								<div className="mt-3 rounded-lg border border-violet-200 bg-violet-50 p-3 space-y-2">
+								<div className="border-t border-gray-100 p-4 space-y-2 bg-violet-50/40">
 									<p className="text-xs font-semibold text-violet-700 uppercase tracking-wide">Nuovo matrimonio</p>
 									<input
 										type="text"
@@ -583,135 +737,26 @@ const AdminOrderDetail = () => {
 										className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
 									/>
 									<div className="flex gap-2">
-										<button
-											type="button"
-											onClick={handleAddEntry}
-											className="flex-1 px-3 py-1.5 rounded-lg bg-violet-600 text-white text-xs font-medium hover:bg-violet-700 transition-colors cursor-pointer"
-										>
-											Aggiungi
-										</button>
-										<button
-											type="button"
-											onClick={() => { setAddingEntry(false); setNewEntryName(""); setNewEntryDate("") }}
-											className="px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
-										>
-											Annulla
-										</button>
+										<button type="button" onClick={handleAddEntry} className="flex-1 px-3 py-1.5 rounded-lg bg-violet-600 text-white text-xs font-medium hover:bg-violet-700 transition-colors cursor-pointer">Aggiungi</button>
+										<button type="button" onClick={() => { setAddingEntry(false); setNewEntryName(""); setNewEntryDate("") }} className="px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer">Annulla</button>
 									</div>
 								</div>
 							) : (
-								<button
-									type="button"
-									onClick={() => setAddingEntry(true)}
-									className="mt-3 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-violet-300 text-violet-600 text-xs font-medium hover:bg-violet-50 transition-colors cursor-pointer"
-								>
-									<i className="fa-solid fa-plus text-[10px]" />
-									Aggiungi matrimonio
-								</button>
+								<div className="border-t border-gray-100 p-4">
+									<button type="button" onClick={() => setAddingEntry(true)} className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-violet-300 text-violet-600 text-xs font-medium hover:bg-violet-50 transition-colors cursor-pointer">
+										<i className="fa-solid fa-plus text-[10px]" />
+										Aggiungi matrimonio
+									</button>
+								</div>
 							)}
 						</div>
 
-						{/* Servizi */}
-						<div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
-							<h2 className="text-base font-semibold text-gray-800 mb-4">Servizi selezionati</h2>
-							{(() => {
-								const services = parseServices(order.selectedServices as any)
-								if (services.length === 0) return <p className="text-sm text-gray-400 italic">Nessun servizio</p>
-								return (
-									<div className="space-y-3">
-										{services.map((s, i) => (
-											<div key={i} className="rounded-lg border border-gray-200 bg-gray-50/50 p-4 space-y-3">
-												<div className="flex items-start justify-between gap-3">
-													<p className="font-semibold text-gray-900 text-sm leading-snug">
-														{s.name ?? <span className="font-mono text-xs text-gray-400">{s.publicId}</span>}
-													</p>
-													{s.pricingType && (
-														<span className={`shrink-0 inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full ${PRICING_TYPE_CLASSES[s.pricingType] ?? "bg-gray-100 text-gray-600"}`}>
-															{PRICING_TYPE_LABELS[s.pricingType] ?? s.pricingType}
-														</span>
-													)}
-												</div>
-												{s.tierLabel && (
-													<div className="flex flex-wrap items-center gap-2">
-														<span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Fascia:</span>
-														<span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-violet-600 text-white text-xs font-semibold">
-															{s.tierLabel}
-														</span>
-													</div>
-												)}
-												{s.duration != null && (
-													<div className="flex items-center gap-1.5 text-sm text-gray-600">
-														<i className="fa-regular fa-clock text-gray-400 text-xs" aria-hidden />
-														<span>Durata stimata: <strong>{formatDuration(s.duration)}</strong></span>
-													</div>
-												)}
-												{s.pricingType === "percentage" ? (
-													<div className="flex items-center gap-1.5 text-sm">
-														<i className="fa-solid fa-percent text-amber-500 text-xs" aria-hidden />
-														<span className="text-gray-700">
-															+<strong>{s.percentageValue}%</strong>
-															{s.price != null && s.price > 0 && (
-																<span className="text-gray-500 ml-1">= €{Number(s.price).toFixed(2)}</span>
-															)}
-														</span>
-													</div>
-												) : s.price != null ? (
-													<div className="flex items-center gap-1.5 text-sm text-gray-700">
-														<i className="fa-solid fa-euro-sign text-gray-400 text-xs" aria-hidden />
-														<span>Prezzo: <strong>€{Number(s.price).toFixed(2)}</strong></span>
-													</div>
-												) : null}
-												{s.notes && (
-													<div className="rounded-md border border-gray-200 bg-white px-3 py-2">
-														<p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-0.5">Note cliente</p>
-														<p className="text-sm text-gray-700 whitespace-pre-wrap">{s.notes}</p>
-													</div>
-												)}
-											</div>
-										))}
-										<div className="pt-1 space-y-1.5 border-t border-gray-100 mt-1">
-											{order.servicesTotal != null && (
-												<div className="flex justify-between items-center text-sm">
-													<span className="text-gray-500">Subtotale servizi</span>
-													<span className="text-gray-700 font-medium">€{Number(order.servicesTotal).toFixed(2)}</span>
-												</div>
-											)}
-											{Number(order.cameraSurcharge) > 0 && (
-												<div className="flex justify-between items-center text-sm">
-													<span className="text-gray-500">Supplemento multi-camera ({order.cameraCount})</span>
-													<span className="text-orange-600 font-medium">+€{Number(order.cameraSurcharge).toFixed(2)}</span>
-												</div>
-											)}
-											{order.totalPrice != null && (
-												<div className="flex justify-between items-center text-sm font-bold border-t border-gray-200 pt-2 mt-1">
-													<span className="text-gray-800">Totale</span>
-													<span className="text-violet-700">€{Number(order.totalPrice).toFixed(2)}</span>
-												</div>
-											)}
-										</div>
-									</div>
-								)
-							})()}
-						</div>
-
-						{/* Materiale */}
-						<div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
-							<h2 className="text-base font-semibold text-gray-800 mb-4">Materiale</h2>
-							<InfoRow label="Consegna" value={DELIVERY_LABELS[order.deliveryMethod] ?? order.deliveryMethod} />
-							{order.materialLink && <InfoRow label="Link materiale" value={order.materialLink} />}
-							<InfoRow label="Dimensione" value={`${order.materialSizeGb} GB`} />
-							{order.generalNotes && <InfoRow label="Note generali" value={order.generalNotes} />}
-							{order.referenceVideo && <InfoRow label="Video riferimento" value={order.referenceVideo} />}
-						</div>
-
-						{/* Export */}
-						{(order.exportFps || order.exportBitrate || order.exportAspect || order.exportResolution) && (
+						{/* Note comuni */}
+						{(order.generalNotes || order.referenceVideo) && (
 							<div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
-								<h2 className="text-base font-semibold text-gray-800 mb-4">Impostazioni esportazione</h2>
-								<InfoRow label="Frame rate" value={order.exportFps ? `${order.exportFps} fps` : null} />
-								<InfoRow label="Bitrate" value={order.exportBitrate ? `${order.exportBitrate} Mbps` : null} />
-								<InfoRow label="Formato" value={order.exportAspect} />
-								<InfoRow label="Risoluzione" value={order.exportResolution} />
+								<h2 className="text-base font-semibold text-gray-800 mb-4">Note comuni</h2>
+								{order.generalNotes && <InfoRow label="Note generali" value={order.generalNotes} />}
+								{order.referenceVideo && <InfoRow label="Video di riferimento" value={order.referenceVideo} />}
 							</div>
 						)}
 					</div>
