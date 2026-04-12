@@ -7,7 +7,6 @@ interface Order {
 	publicId: string
 	coupleName: string
 	weddingDate: string
-	desiredDeliveryDate?: string | null
 	selectedServices: any[]
 	totalPrice: number | null
 	status: "pending" | "in_progress" | "completed" | "cancelled"
@@ -250,12 +249,6 @@ const Dashboard = () => {
 												<span>
 													<i className="fa-solid fa-ring text-[10px] mr-1.5 text-[#a78bfa]" aria-hidden />
 													{formatDate(order.weddingDate)}
-												</span>
-											)}
-											{order.desiredDeliveryDate && (
-												<span>
-													<i className="fa-solid fa-calendar-check text-[10px] mr-1.5 text-[#a78bfa]" aria-hidden />
-													Consegna: {formatDate(order.desiredDeliveryDate)}
 												</span>
 											)}
 										</div>

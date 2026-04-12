@@ -18,6 +18,12 @@ interface OrderEntry {
 	status: "pending" | "in_progress" | "completed" | "cancelled"
 	adminNotes?: string | null
 	deliveryLink?: string | null
+	// Per-entry service config
+	selectedServices?: SelectedService[] | string | null
+	servicesTotal?: number | null
+	cameraSurcharge?: number | null
+	totalPrice?: number | null
+	cameraCount?: "1-4" | "5-6" | "7+" | null
 }
 
 interface SelectedService {
@@ -465,6 +471,47 @@ const AdminOrderDetail = () => {
 											{/* Body espandibile */}
 											{isExpanded && (
 												<div className="border-t border-gray-100 p-4 space-y-3 bg-gray-50/50">
+													{/* Servizi entry (read-only) */}
+													{(() => {
+														const svcs: SelectedService[] = (() => {
+															if (!entry.selectedServices) return []
+															if (Array.isArray(entry.selectedServices)) return entry.selectedServices as SelectedService[]
+															try { return JSON.parse(entry.selectedServices as string) as SelectedService[] } catch { return [] }
+														})()
+														if (svcs.length === 0) return null
+														return (
+															<div>
+																<p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Servizi</p>
+																<div className="space-y-1">
+																	{svcs.map((svc) => (
+																		<div key={svc.publicId} className="flex justify-between items-start text-xs gap-2">
+																			<span className="text-gray-600">
+																				{svc.name}
+																				{svc.tierLabel && <span className="text-gray-400 ml-1">({svc.tierLabel})</span>}
+																			</span>
+																			<span className="font-medium text-gray-800 shrink-0">
+																				{svc.pricingType === "percentage"
+																					? <span className="text-violet-600">+{svc.percentageValue}%{svc.price != null && svc.price > 0 ? ` (€${Number(svc.price).toFixed(2)})` : ""}</span>
+																					: svc.price != null ? `€${Number(svc.price).toFixed(2)}` : "—"}
+																			</span>
+																		</div>
+																	))}
+																	{entry.cameraSurcharge != null && Number(entry.cameraSurcharge) > 0 && (
+																		<div className="flex justify-between text-xs gap-2">
+																			<span className="text-gray-500">Supplemento multi-camera ({entry.cameraCount})</span>
+																			<span className="font-medium text-orange-600 shrink-0">+€{Number(entry.cameraSurcharge).toFixed(2)}</span>
+																		</div>
+																	)}
+																	{entry.totalPrice != null && (
+																		<div className="flex justify-between text-xs font-semibold border-t border-gray-200 mt-1 pt-1">
+																			<span className="text-gray-700">Totale matrimonio</span>
+																			<span className="text-violet-600">€{Number(entry.totalPrice).toFixed(2)}</span>
+																		</div>
+																	)}
+																</div>
+															</div>
+														)
+													})()}
 													{/* Note admin */}
 													<div>
 														<label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Note per il cliente</label>

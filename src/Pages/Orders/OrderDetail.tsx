@@ -23,6 +23,19 @@ interface OrderEntry {
 	status: string
 	adminNotes?: string | null
 	deliveryLink?: string | null
+	// Per-entry service config
+	selectedServices?: StoredService[] | string | null
+	deliveryMethod?: "cloud_link" | "upload_request" | null
+	materialLink?: string | null
+	materialSizeGb?: number | null
+	cameraCount?: "1-4" | "5-6" | "7+" | null
+	exportFps?: string | null
+	exportBitrate?: string | null
+	exportAspect?: string | null
+	exportResolution?: string | null
+	servicesTotal?: number | null
+	cameraSurcharge?: number | null
+	totalPrice?: number | null
 }
 
 interface Order {
@@ -31,10 +44,10 @@ interface Order {
 	weddingDate: string
 	desiredDeliveryDate?: string | null
 	entries?: OrderEntry[]
-	deliveryMethod: "cloud_link" | "upload_request"
+	deliveryMethod?: "cloud_link" | "upload_request" | null
 	materialLink?: string | null
-	materialSizeGb: number
-	cameraCount: "1-4" | "5-6" | "7+"
+	materialSizeGb?: number | null
+	cameraCount?: "1-4" | "5-6" | "7+" | null
 	generalNotes?: string | null
 	referenceVideo?: string | null
 	exportFps?: string | null
@@ -107,7 +120,8 @@ function formatDuration(minutes: number): string {
 	return `${mins}min ${secs}s`
 }
 
-function parseServices(raw: StoredService[] | string): StoredService[] {
+function parseServices(raw: StoredService[] | string | null | undefined): StoredService[] {
+	if (!raw) return []
 	if (Array.isArray(raw)) return raw
 	if (typeof raw === "string") {
 		try { return JSON.parse(raw) } catch { return [] }
@@ -147,8 +161,9 @@ const OrderDetail = () => {
 
 	if (!order) return null
 
-	const services = parseServices(order.selectedServices)
+	const isBatch = order.entries && order.entries.length > 1
 
+	const services = parseServices(order.selectedServices)
 	const mainServices     = services.filter((s) => s.pricingType !== "percentage")
 	const deliveryServices = services.filter((s) => s.pricingType === "percentage")
 
@@ -256,31 +271,70 @@ const OrderDetail = () => {
 							)}
 						</div>
 
-						{/* Matrimoni inclusi (solo batch) */}
-						{order.entries && order.entries.length > 1 && (
+						{/* Matrimoni inclusi (solo batch) — con servizi per-entry */}
+						{isBatch && order.entries && (
 							<div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 md:p-8 space-y-4">
 								<div>
 									<h2 className="text-lg font-semibold text-gray-900">Matrimoni inclusi</h2>
 									<p className="text-sm text-gray-500 mt-0.5">{order.entries.length} matrimoni in questo ordine.</p>
 								</div>
-								<div className="divide-y divide-gray-100">
-									{order.entries.map((entry) => (
-										<div key={entry.publicId} className="flex flex-col sm:flex-row sm:items-center gap-2 py-3 first:pt-0 last:pb-0">
-											<div className="flex-1 min-w-0">
-												<p className="font-semibold text-gray-900 text-sm">{entry.coupleName}</p>
-												<p className="text-xs text-gray-500 mt-0.5">
-													<i className="fa-solid fa-ring text-[9px] mr-1 text-[#a78bfa]" aria-hidden />
-													{formatDate(entry.weddingDate)}
-												</p>
-											</div>
+								<div className="space-y-4">
+									{order.entries.map((entry) => {
+										const entrySvcs = parseServices((entry.selectedServices ?? null) as StoredService[] | string | null)
+										const entryTot = entry.totalPrice != null ? Number(entry.totalPrice) : null
+										return (
+											<div key={entry.publicId} className="rounded-lg border border-gray-200 overflow-hidden">
+												{/* Header entry */}
+												<div className="flex flex-wrap items-center gap-3 px-4 py-3 bg-gray-50 border-b border-gray-200">
+													<div className="flex-1 min-w-0">
+														<p className="font-semibold text-gray-900 text-sm">{entry.coupleName}</p>
+														<p className="text-xs text-gray-500 mt-0.5">
+															<i className="fa-solid fa-ring text-[9px] mr-1 text-[#a78bfa]" aria-hidden />
+															{formatDate(entry.weddingDate)}
+														</p>
+													</div>
+													{entryTot != null && (
+														<span className="text-sm font-bold text-[#7c3aed]">€{entryTot.toFixed(2)}</span>
+													)}
 												</div>
-									))}
+												{/* Servizi entry */}
+												{entrySvcs.length > 0 && (
+													<div className="px-4 py-3 space-y-1.5">
+														{entrySvcs.map((svc) => (
+															<div key={svc.publicId} className="flex justify-between items-start text-sm gap-2">
+																<span className="text-gray-700 leading-snug">
+																	{svc.name}
+																	{svc.tierLabel && (
+																		<span className="block text-xs text-gray-400">
+																			{svc.tierLabel}
+																			{svc.duration != null && ` · ${formatDuration(svc.duration)}`}
+																		</span>
+																	)}
+																</span>
+																<span className="font-medium text-gray-900 shrink-0 text-xs">
+																	{svc.pricingType === "percentage"
+																		? <span className="text-[#7c3aed]">+{svc.percentageValue}%{svc.price != null && svc.price > 0 ? ` (€${Number(svc.price).toFixed(2)})` : ""}</span>
+																		: svc.price != null ? `€${Number(svc.price).toFixed(2)}` : "—"}
+																</span>
+															</div>
+														))}
+														{entry.cameraSurcharge != null && Number(entry.cameraSurcharge) > 0 && (
+															<div className="flex justify-between items-center text-sm gap-2">
+																<span className="text-gray-500 text-xs">Supplemento multi-camera ({entry.cameraCount})</span>
+																<span className="font-medium text-orange-600 shrink-0 text-xs">+€{Number(entry.cameraSurcharge).toFixed(2)}</span>
+															</div>
+														)}
+													</div>
+												)}
+											</div>
+										)
+									})}
 								</div>
 							</div>
 						)}
 
-						{/* Servizi */}
-						<div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 md:p-8 space-y-4">
+						{/* Servizi (solo ordini singoli — per batch i servizi sono per-entry sopra) */}
+						{!isBatch && <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 md:p-8 space-y-4">
 							<div>
 								<h2 className="text-lg font-semibold text-gray-900">Servizi</h2>
 								<p className="text-sm text-gray-500 mt-0.5">I servizi inclusi in questo progetto.</p>
@@ -373,10 +427,10 @@ const OrderDetail = () => {
 
 								</div>
 							)}
-						</div>
+						</div>}
 
-						{/* Materiale */}
-						<div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 md:p-8 space-y-4">
+						{/* Materiale (solo ordini singoli) */}
+						{!isBatch && <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 md:p-8 space-y-4">
 							<div>
 								<h2 className="text-lg font-semibold text-gray-900">Materiale</h2>
 								<p className="text-sm text-gray-500 mt-0.5">Modalità di consegna del materiale video.</p>
@@ -409,11 +463,13 @@ const OrderDetail = () => {
 									<a href={order.materialLink} target="_blank" rel="noopener noreferrer" className="text-sm text-[#7c3aed] underline break-all">{order.materialLink}</a>
 								</div>
 							)}
-							<div>
-								<p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Dimensione totale materiale</p>
-								<p className="text-sm font-medium text-gray-800">{order.materialSizeGb} GB</p>
-							</div>
-						</div>
+							{order.materialSizeGb != null && (
+								<div>
+									<p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Dimensione totale materiale</p>
+									<p className="text-sm font-medium text-gray-800">{order.materialSizeGb} GB</p>
+								</div>
+							)}
+						</div>}
 
 						{/* Note */}
 						{(order.generalNotes || order.referenceVideo) && (
@@ -434,8 +490,8 @@ const OrderDetail = () => {
 							</div>
 						)}
 
-						{/* Telecamere */}
-						<div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 md:p-8 space-y-4">
+						{/* Telecamere (solo ordini singoli) */}
+						{!isBatch && <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 md:p-8 space-y-4">
 							<div>
 								<h2 className="text-lg font-semibold text-gray-900">Telecamere</h2>
 								<p className="text-sm text-gray-500 mt-0.5">Numero di telecamere utilizzate nel giorno del matrimonio.</p>
@@ -458,10 +514,10 @@ const OrderDetail = () => {
 									)
 								})}
 							</div>
-						</div>
+						</div>}
 
-						{/* Impostazioni esportazione */}
-						{(order.exportFps || order.exportBitrate || order.exportAspect || order.exportResolution) && (
+						{/* Impostazioni esportazione (solo ordini singoli) */}
+						{!isBatch && (order.exportFps || order.exportBitrate || order.exportAspect || order.exportResolution) && (
 							<div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 md:p-8 space-y-4">
 								<div>
 									<h2 className="text-lg font-semibold text-gray-900">Impostazioni di esportazione</h2>
@@ -505,17 +561,35 @@ const OrderDetail = () => {
 								<h2 className="text-lg font-semibold text-[#6d28d9]">Riepilogo</h2>
 							</div>
 							<div className="p-4 space-y-3">
+								{isBatch && order.entries ? (
+									// Riepilogo batch: lista per matrimonio
+									<>
+										{order.entries.map((e) => (
+											<div key={e.publicId} className="flex justify-between items-start text-sm gap-2">
+												<div>
+													<span className="font-medium text-gray-700">{e.coupleName}</span>
+													<span className="block text-xs text-gray-400">{formatDate(e.weddingDate)}</span>
+												</div>
+												<span className="font-semibold text-gray-900 shrink-0">
+													{e.totalPrice != null ? `€${Number(e.totalPrice).toFixed(2)}` : "—"}
+												</span>
+											</div>
+										))}
+										<div className="border-t border-gray-200 pt-3 flex justify-between font-bold text-base">
+											<span className="text-gray-800">Totale</span>
+											<span className="text-[#7c3aed]">
+												{totalPrice != null ? `€${totalPrice.toFixed(2)}` : <em className="font-normal text-gray-400 text-sm">Da definire</em>}
+											</span>
+										</div>
+									</>
+								) : (
+									<>
 								<div className="text-sm text-gray-700">
 									<span className="font-medium">Coppia:</span> {order.coupleName}
 								</div>
 								<div className="text-sm text-gray-700">
 									<span className="font-medium">Matrimonio:</span> {formatDate(order.weddingDate)}
 								</div>
-								{order.desiredDeliveryDate && (
-									<div className="text-sm text-gray-700">
-										<span className="font-medium">Consegna desiderata:</span> {formatDate(order.desiredDeliveryDate)}
-									</div>
-								)}
 
 								{services.length > 0 ? (
 									<>
@@ -564,6 +638,8 @@ const OrderDetail = () => {
 									</>
 								) : (
 									<p className="text-sm text-gray-400 italic">Nessun servizio.</p>
+								)}
+									</>
 								)}
 
 								<div className="border-t border-gray-100 pt-3 text-xs text-gray-400 space-y-1">
