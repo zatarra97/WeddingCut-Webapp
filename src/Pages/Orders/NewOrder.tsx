@@ -47,6 +47,8 @@ interface EntryForm {
 	exportBitrate: string | null
 	exportAspect: string | null
 	exportResolution: string | null
+	generalNotes: string
+	referenceVideo: string
 }
 
 // ─── Costanti ─────────────────────────────────────────────────────────────────
@@ -84,6 +86,7 @@ const defaultEntry = (): EntryForm => ({
 	deliveryMethod: null, materialLink: "", materialSizeGb: "",
 	cameraCount: null, exportFps: null, exportBitrate: null,
 	exportAspect: null, exportResolution: null,
+	generalNotes: "", referenceVideo: "",
 })
 
 // ─── Helpers formattazione ────────────────────────────────────────────────────
@@ -189,14 +192,15 @@ const NewOrder = () => {
 	const [selectedIdx, setSelectedIdx] = useState(0)
 	const [isMulti, setIsMulti] = useState(false)
 
-	// Campi condivisi (a livello ordine)
-	const [generalNotes, setGeneralNotes]   = useState("")
-	const [referenceVideo, setReferenceVideo] = useState("")
-
 	const [services,        setServices]        = useState<PublicService[]>([])
 	const [loadingServices, setLoadingServices] = useState(true)
 	const [submitting,      setSubmitting]      = useState(false)
 	const [confirmDeleteIdx, setConfirmDeleteIdx] = useState<number | null>(null)
+
+	// Stato modale duplica
+	const [duplicateFromIdx,       setDuplicateFromIdx]       = useState<number | null>(null)
+	const [duplicateCoupleName,    setDuplicateCoupleName]    = useState("")
+	const [duplicateWeddingDate,   setDuplicateWeddingDate]   = useState("")
 
 	useEffect(() => {
 		genericGet("user/services")
@@ -219,14 +223,25 @@ const NewOrder = () => {
 	}
 
 	const duplicateEntry = (idx: number) => {
+		setDuplicateFromIdx(idx)
+		setDuplicateCoupleName("")
+		setDuplicateWeddingDate("")
+	}
+
+	const confirmDuplicate = () => {
+		if (duplicateFromIdx === null) return
+		const source = entries[duplicateFromIdx]
 		const copy: EntryForm = {
-			...JSON.parse(JSON.stringify(entries[idx])),
-			coupleName: "",
-			weddingDate: "",
+			...JSON.parse(JSON.stringify(source)),
+			coupleName:    duplicateCoupleName.trim(),
+			weddingDate:   duplicateWeddingDate,
+			generalNotes:  "",
+			referenceVideo: "",
 		}
 		setEntries((prev) => [...prev, copy])
 		setSelectedIdx(entries.length)
 		setIsMulti(true)
+		setDuplicateFromIdx(null)
 	}
 
 	const removeEntry = (idx: number) => {
@@ -371,13 +386,13 @@ const NewOrder = () => {
 					servicesTotal:    main + fd,
 					cameraSurcharge:  cs,
 					totalPrice:       main + fd + cs,
+					generalNotes:     entry.generalNotes.trim() || null,
+					referenceVideo:   entry.referenceVideo.trim() || null,
 				}
 			})
 
 			const first = entriesPayload[0]
 			const payload: Record<string, any> = {
-				generalNotes:     generalNotes.trim() || null,
-				referenceVideo:   referenceVideo.trim() || null,
 				// Prima entry come retrocompat ordine padre
 				coupleName:       first.coupleName,
 				weddingDate:      first.weddingDate,
@@ -432,12 +447,12 @@ const NewOrder = () => {
 					servicesTotal:    main + fd,
 					cameraSurcharge:  cs,
 					totalPrice:       main + fd + cs,
+					generalNotes:     entry.generalNotes.trim() || null,
+					referenceVideo:   entry.referenceVideo.trim() || null,
 				}
 			})
 			const first = entriesPayload[0]
 			const payload: Record<string, any> = {
-				generalNotes:     generalNotes.trim() || null,
-				referenceVideo:   referenceVideo.trim() || null,
 				coupleName:       first.coupleName,
 				weddingDate:      first.weddingDate,
 				deliveryMethod:   first.deliveryMethod,
@@ -1058,26 +1073,23 @@ const NewOrder = () => {
 								</div>
 								{renderEntryConfig()}
 
-								{/* Note condivise — mostrate sotto il form */}
+								{/* Note matrimonio corrente */}
 								<div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 md:p-8 space-y-4">
-									<div>
-										<h2 className="text-lg font-semibold text-gray-900">Note generali</h2>
-										<p className="text-sm text-gray-400 mt-0.5">Comuni a tutti i matrimoni di questo ordine.</p>
-									</div>
+									<h2 className="text-lg font-semibold text-gray-900">Note</h2>
 									<Textarea
-										name="generalNotes"
+										name={`generalNotes-${selectedIdx}`}
 										label="Note generali"
 										rows={4}
-										value={generalNotes}
-										onChange={(e) => setGeneralNotes(e.target.value)}
+										value={currentEntry.generalNotes}
+										onChange={(e) => updateCurrentEntry("generalNotes", e.target.value)}
 										placeholder="Stile di montaggio, preferenze musicali, momenti da includere o escludere, etc."
 									/>
 									<Textarea
-										name="referenceVideo"
+										name={`referenceVideo-${selectedIdx}`}
 										label="Video di riferimento"
 										rows={3}
-										value={referenceVideo}
-										onChange={(e) => setReferenceVideo(e.target.value)}
+										value={currentEntry.referenceVideo}
+										onChange={(e) => updateCurrentEntry("referenceVideo", e.target.value)}
 										placeholder="Link o descrizione di video che vorresti usare come riferimento stilistico."
 									/>
 								</div>
@@ -1115,19 +1127,19 @@ const NewOrder = () => {
 								<div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 md:p-8 space-y-4">
 									<h2 className="text-lg font-semibold text-gray-900">Note</h2>
 									<Textarea
-										name="generalNotes"
+										name="generalNotes-0"
 										label="Note generali"
 										rows={4}
-										value={generalNotes}
-										onChange={(e) => setGeneralNotes(e.target.value)}
+										value={currentEntry.generalNotes}
+										onChange={(e) => updateCurrentEntry("generalNotes", e.target.value)}
 										placeholder="Stile di montaggio, preferenze musicali, momenti da includere o escludere, etc."
 									/>
 									<Textarea
-										name="referenceVideo"
+										name="referenceVideo-0"
 										label="Video di riferimento"
 										rows={3}
-										value={referenceVideo}
-										onChange={(e) => setReferenceVideo(e.target.value)}
+										value={currentEntry.referenceVideo}
+										onChange={(e) => updateCurrentEntry("referenceVideo", e.target.value)}
 										placeholder="Link o descrizione di video che vorresti usare come riferimento stilistico."
 									/>
 								</div>
@@ -1180,6 +1192,62 @@ const NewOrder = () => {
 									className="flex-1 py-2 rounded-lg bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors cursor-pointer"
 								>
 									Elimina
+								</button>
+							</div>
+						</div>
+					</div>
+				)}
+
+				{/* Modal duplica matrimonio */}
+				{duplicateFromIdx !== null && (
+					<div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+						<div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDuplicateFromIdx(null)} />
+						<div className="relative bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
+							<div className="flex items-center gap-3 mb-1">
+								<div className="w-10 h-10 rounded-full bg-[#ede9fe] flex items-center justify-center shrink-0">
+									<i className="fa-solid fa-copy text-[#7c3aed]" />
+								</div>
+								<p className="font-semibold text-gray-900">Duplica</p>
+							</div>
+							<p className="text-xs text-gray-500 mb-5 leading-relaxed">
+								Verrà copiata tutta la configurazione del matrimonio (servizi, materiali, impostazioni export) tranne le note generali e il video di riferimento.
+							</p>
+							<div className="space-y-3 mb-5">
+								<div>
+									<label className="block text-sm font-medium text-gray-700 mb-1">Nomi della coppia *</label>
+									<input
+										type="text"
+										value={duplicateCoupleName}
+										onChange={(e) => setDuplicateCoupleName(e.target.value)}
+										placeholder="Es. Mario e Laura"
+										className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#7c3aed] focus:border-transparent"
+									/>
+								</div>
+								<div>
+									<label className="block text-sm font-medium text-gray-700 mb-1">Data del matrimonio *</label>
+									<input
+										type="date"
+										value={duplicateWeddingDate}
+										onChange={(e) => setDuplicateWeddingDate(e.target.value)}
+										className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#7c3aed] focus:border-transparent"
+									/>
+								</div>
+							</div>
+							<div className="flex gap-3">
+								<button
+									type="button"
+									onClick={() => setDuplicateFromIdx(null)}
+									className="flex-1 py-2 rounded-lg border border-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors cursor-pointer"
+								>
+									Annulla
+								</button>
+								<button
+									type="button"
+									onClick={confirmDuplicate}
+									disabled={!duplicateCoupleName.trim() || !duplicateWeddingDate}
+									className="flex-1 py-2 rounded-lg bg-[#7c3aed] text-white text-sm font-medium hover:bg-[#6d28d9] disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+								>
+									Duplica
 								</button>
 							</div>
 						</div>

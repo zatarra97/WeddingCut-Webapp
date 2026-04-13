@@ -25,6 +25,8 @@ interface OrderEntry {
 	deliveryLink?: string | null
 	previewLink?: string | null
 	userRevisionNotes?: string | null
+	generalNotes?: string | null
+	referenceVideo?: string | null
 	// Per-entry service config
 	selectedServices?: StoredService[] | string | null
 	deliveryMethod?: "cloud_link" | "upload_request" | null
@@ -669,7 +671,25 @@ const OrderDetail = () => {
 															</div>
 														)}
 
-														{/* Sezione revisione preview */}
+														{/* Note per-entry */}
+								{(entry.generalNotes || entry.referenceVideo) && (
+									<div className="border-t border-gray-100 pt-4 space-y-3">
+										{entry.generalNotes && (
+											<div>
+												<p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Note generali</p>
+												<p className="text-sm text-gray-700 whitespace-pre-wrap bg-gray-50 rounded-lg border border-gray-100 p-3">{entry.generalNotes}</p>
+											</div>
+										)}
+										{entry.referenceVideo && (
+											<div>
+												<p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Video di riferimento</p>
+												<p className="text-sm text-gray-700 whitespace-pre-wrap bg-gray-50 rounded-lg border border-gray-100 p-3">{entry.referenceVideo}</p>
+											</div>
+										)}
+									</div>
+								)}
+
+								{/* Sezione revisione preview */}
 														{entry.previewLink && (
 															<div className="border-t border-gray-200 pt-4 space-y-3">
 																<div className="flex items-center justify-between">
@@ -881,24 +901,29 @@ const OrderDetail = () => {
 							)}
 						</div>}
 
-						{/* Note */}
-						{(order.generalNotes || order.referenceVideo) && (
-							<div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 md:p-8 space-y-4">
-								<h2 className="text-lg font-semibold text-gray-900">Note</h2>
-								{order.generalNotes && (
-									<div>
-										<p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Note generali</p>
-										<p className="text-sm text-gray-700 whitespace-pre-wrap bg-gray-50 rounded-lg border border-gray-100 p-3">{order.generalNotes}</p>
-									</div>
-								)}
-								{order.referenceVideo && (
-									<div>
-										<p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Video di riferimento</p>
-										<p className="text-sm text-gray-700 whitespace-pre-wrap bg-gray-50 rounded-lg border border-gray-100 p-3">{order.referenceVideo}</p>
-									</div>
-								)}
-							</div>
-						)}
+						{/* Note (ordini singoli — lette dalla prima entry) */}
+						{!isBatch && (() => {
+							const firstEntry = order.entries?.[0]
+							const notes = firstEntry?.generalNotes || order.generalNotes
+							const refVideo = firstEntry?.referenceVideo || order.referenceVideo
+							return (notes || refVideo) ? (
+								<div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 md:p-8 space-y-4">
+									<h2 className="text-lg font-semibold text-gray-900">Note</h2>
+									{notes && (
+										<div>
+											<p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Note generali</p>
+											<p className="text-sm text-gray-700 whitespace-pre-wrap bg-gray-50 rounded-lg border border-gray-100 p-3">{notes}</p>
+										</div>
+									)}
+									{refVideo && (
+										<div>
+											<p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Video di riferimento</p>
+											<p className="text-sm text-gray-700 whitespace-pre-wrap bg-gray-50 rounded-lg border border-gray-100 p-3">{refVideo}</p>
+										</div>
+									)}
+								</div>
+							) : null
+						})()}
 
 						{/* Telecamere (solo ordini singoli) */}
 						{!isBatch && <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 md:p-8 space-y-4">
