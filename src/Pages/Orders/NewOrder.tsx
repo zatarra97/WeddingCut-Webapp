@@ -1252,25 +1252,19 @@ const NewOrder = () => {
 								Verrà copiata tutta la configurazione del matrimonio (servizi, materiali, impostazioni export) tranne le note generali e il video di riferimento.
 							</p>
 							<div className="space-y-3 mb-5">
-								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-1">Nomi della coppia *</label>
-									<input
-										type="text"
-										value={duplicateCoupleName}
-										onChange={(e) => setDuplicateCoupleName(e.target.value)}
-										placeholder="Es. Mario e Laura"
-										className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#7c3aed] focus:border-transparent"
-									/>
-								</div>
-								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-1">Data del matrimonio *</label>
-									<input
-										type="date"
-										value={duplicateWeddingDate}
-										onChange={(e) => setDuplicateWeddingDate(e.target.value)}
-										className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#7c3aed] focus:border-transparent"
-									/>
-								</div>
+								<Input
+									name="duplicate-coupleName"
+									type="text"
+									label="Nomi della coppia *"
+									value={duplicateCoupleName}
+									onChange={(e) => setDuplicateCoupleName(e.target.value)}
+									placeholder="Es. Mario e Laura"
+								/>
+								<DateTimePicker
+									label="Data del matrimonio *"
+									value={duplicateWeddingDate || null}
+									onChange={(date) => setDuplicateWeddingDate(date ?? "")}
+								/>
 							</div>
 							<div className="flex gap-3">
 								<button
