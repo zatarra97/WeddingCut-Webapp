@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react"
+import React, { useEffect, useRef, useCallback } from "react"
 import { Datepicker } from "flowbite-react"
 import moment from "moment"
 
@@ -103,18 +103,21 @@ const theme = {
 
 const DateTimePicker = React.forwardRef<HTMLDivElement, DateTimePickerProps>(
 	({ label, value, onChange, error, disableFuture, yearOnly, className, disabled, ...rest }, ref) => {
-		// Ref locale per scopare le query DOM all'istanza corrente
-		const innerRef = useRef<HTMLDivElement>(null)
+		const containerRef = useRef<HTMLDivElement>(null)
+		const setRefs = useCallback(
+			(node: HTMLDivElement | null) => {
+				;(containerRef as React.MutableRefObject<HTMLDivElement | null>).current = node
+				if (typeof ref === "function") ref(node)
+				else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = node
+			},
+			[ref],
+		)
 
 		const handleChange = (date: Date | null) => {
 			if (date) {
-				// Crea una data UTC direttamente utilizzando i componenti anno, mese, giorno
-				// senza fare conversioni di fuso orario
 				const year = date.getFullYear()
 				const month = date.getMonth()
 				const day = date.getDate()
-
-				// Crea la data direttamente in UTC
 				const utcDate = new Date(Date.UTC(year, month, day, 0, 0, 0, 0))
 				const formattedDate = moment.utc(utcDate).format("YYYY-MM-DDTHH:mm:ss.SSS[Z]")
 				onChange(formattedDate)
@@ -123,44 +126,24 @@ const DateTimePicker = React.forwardRef<HTMLDivElement, DateTimePickerProps>(
 			}
 		}
 
-		// Migliora la gestione della conversione della data
 		const getDateValue = () => {
-			if (!value) {
-				return undefined
-			}
-
-			// Se è già una Date, usala direttamente
-			if (Object.prototype.toString.call(value) === "[object Date]") {
-				return value as unknown as Date
-			}
-
-			// Se è una stringa, prova a parsarla
+			if (!value) return undefined
+			if (Object.prototype.toString.call(value) === "[object Date]") return value as unknown as Date
 			if (typeof value === "string") {
 				const parsedDate = moment(value).toDate()
-
-				// Verifica se la data è valida
-				if (moment(value).isValid()) {
-					return parsedDate
-				} else {
-					console.error("DateTimePicker - Data non valida:", value)
-					return undefined
-				}
+				if (moment(value).isValid()) return parsedDate
+				console.error("DateTimePicker - Data non valida:", value)
+				return undefined
 			}
-
 			console.warn("DateTimePicker - Formato valore non riconosciuto:", value)
 			return undefined
 		}
 
-		// Genera una key unica basata sul valore per forzare il re-render
 		const datepickerKey = value ? `datepicker-${value}` : "datepicker-empty"
 
 		useEffect(() => {
-			// Usa il ref locale per scopare la query all'istanza corrente
-			// (evita conflitti quando più DateTimePicker sono presenti nella stessa pagina)
-			const getInput = () => innerRef.current?.querySelector("input") as HTMLInputElement | null
-
 			const applyCustomStyles = () => {
-				const input = getInput()
+				const input = containerRef.current?.querySelector("input") as HTMLInputElement | undefined
 				if (!input) return
 
 				input.style.cssText = ""
@@ -175,20 +158,17 @@ const DateTimePicker = React.forwardRef<HTMLDivElement, DateTimePickerProps>(
 				input.style.fontSize = "1rem"
 				input.style.boxShadow = "none"
 
+				if (!value && !disabled) {
+					input.setAttribute("placeholder", "Seleziona data")
+					if (input.value) input.value = ""
+				} else {
+					input.removeAttribute("placeholder")
+				}
+
 				if (disabled) {
 					input.style.opacity = "90"
 					input.style.color = "#6B7280"
 					input.style.backgroundColor = "#f8fafc"
-				}
-
-				// Quando non c'è valore: forza input vuoto e imposta placeholder
-				// Flowbite inizializza internamente con la data odierna (useState(new Date()))
-				// quindi dobbiamo sovrascrivere il valore DOM dopo il suo render
-				if (!value && !disabled) {
-					input.setAttribute("placeholder", "Seleziona data")
-					input.value = ""
-				} else {
-					input.removeAttribute("placeholder")
 				}
 
 				if (!disabled) {
@@ -210,31 +190,30 @@ const DateTimePicker = React.forwardRef<HTMLDivElement, DateTimePickerProps>(
 				}
 			}
 
-			// Prima applicazione immediata, poi dopo 50ms per attendere il render di Flowbite
-			const cleanup = applyCustomStyles()
-			const timeoutId = setTimeout(applyCustomStyles, 50)
-			return () => {
-				clearTimeout(timeoutId)
-				cleanup?.()
-			}
+			applyCustomStyles()
+			const timeoutId = setTimeout(applyCustomStyles, 100)
+			return () => clearTimeout(timeoutId)
 		}, [error, value, disabled])
 
 		const dateValue = getDateValue()
+		// Passa null esplicito quando non c'è valore: evita che flowbite usi la data odierna come default
+		const controlledValue = dateValue !== undefined ? dateValue : null
 
 		return (
 			<div className={`w-full ${className || ""}`}>
 				{label && <label className="form-label">{label}</label>}
-				<div ref={(el) => { innerRef.current = el; if (typeof ref === "function") ref(el); else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = el }} className="custom-datepicker">
+				<div ref={setRefs} className="custom-datepicker">
 					<Datepicker
 						key={datepickerKey}
 						onChange={handleChange}
-						{...(dateValue !== undefined ? { value: dateValue } : {})}
+						value={controlledValue}
+						label=""
 						maxDate={disableFuture ? new Date() : undefined}
 						theme={theme}
 						language="it"
 						weekStart={1}
 						labelTodayButton="Oggi"
-						labelClearButton="Cancella"
+						labelClearButton="Annulla"
 						disabled={disabled}
 						{...rest}
 					/>
@@ -269,7 +248,7 @@ const DateTimePicker = React.forwardRef<HTMLDivElement, DateTimePickerProps>(
 				{error && <p className="text-red-500 text-xs mt-1">{error.message}</p>}
 			</div>
 		)
-	}
+	},
 )
 
 DateTimePicker.displayName = "DateTimePicker"
