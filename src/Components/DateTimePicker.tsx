@@ -1,4 +1,4 @@
-import React, { useEffect } from "react"
+import React, { useEffect, useRef } from "react"
 import { Datepicker } from "flowbite-react"
 import moment from "moment"
 
@@ -103,6 +103,9 @@ const theme = {
 
 const DateTimePicker = React.forwardRef<HTMLDivElement, DateTimePickerProps>(
 	({ label, value, onChange, error, disableFuture, yearOnly, className, disabled, ...rest }, ref) => {
+		// Ref locale per scopare le query DOM all'istanza corrente
+		const innerRef = useRef<HTMLDivElement>(null)
+
 		const handleChange = (date: Date | null) => {
 			if (date) {
 				// Crea una data UTC direttamente utilizzando i componenti anno, mese, giorno
@@ -152,85 +155,76 @@ const DateTimePicker = React.forwardRef<HTMLDivElement, DateTimePickerProps>(
 		const datepickerKey = value ? `datepicker-${value}` : "datepicker-empty"
 
 		useEffect(() => {
-			// Applica gli stili direttamente all'input dopo il render
+			// Usa il ref locale per scopare la query all'istanza corrente
+			// (evita conflitti quando più DateTimePicker sono presenti nella stessa pagina)
+			const getInput = () => innerRef.current?.querySelector("input") as HTMLInputElement | null
+
 			const applyCustomStyles = () => {
-				const input = document.querySelector(".custom-datepicker input") as HTMLInputElement
+				const input = getInput()
+				if (!input) return
 
-				if (input) {
-					// Reset di tutti gli stili
-					input.style.cssText = ""
+				input.style.cssText = ""
+				input.style.appearance = "none"
+				input.style.border = `1px solid ${error ? "#ef4444" : "#d1d5db"}`
+				input.style.borderRadius = "0.300rem"
+				input.style.width = "100%"
+				input.style.padding = "0.5rem 0.75rem"
+				input.style.color = "#374151"
+				input.style.lineHeight = "1.25"
+				input.style.backgroundColor = "white"
+				input.style.fontSize = "1rem"
+				input.style.boxShadow = "none"
 
-					// Applica i nostri stili personalizzati
-					input.style.appearance = "none"
-					input.style.border = `1px solid ${error ? "#ef4444" : "#d1d5db"}`
-					input.style.borderRadius = "0.300rem"
-					input.style.width = "100%"
-					input.style.padding = "0.5rem 0.75rem"
-					input.style.color = "#374151"
-					input.style.lineHeight = "1.25"
-					input.style.backgroundColor = "white"
-					input.style.fontSize = "1rem"
-					input.style.boxShadow = "none"
+				if (disabled) {
+					input.style.opacity = "90"
+					input.style.color = "#6B7280"
+					input.style.backgroundColor = "#f8fafc"
+				}
 
-					// Imposta il placeholder e pulisce il valore quando non c'è un valore
-					if (!value && !disabled) {
-						input.setAttribute("placeholder", "Seleziona data")
-						// Forza l'input a essere vuoto quando non c'è un valore
-						if (input.value) {
-							input.value = ""
-						}
-					} else {
-						input.removeAttribute("placeholder")
+				// Quando non c'è valore: forza input vuoto e imposta placeholder
+				// Flowbite inizializza internamente con la data odierna (useState(new Date()))
+				// quindi dobbiamo sovrascrivere il valore DOM dopo il suo render
+				if (!value && !disabled) {
+					input.setAttribute("placeholder", "Seleziona data")
+					input.value = ""
+				} else {
+					input.removeAttribute("placeholder")
+				}
+
+				if (!disabled) {
+					const handleFocus = () => {
+						input.style.outline = "none"
+						input.style.borderColor = error ? "#ef4444" : "#7c3aed"
+						input.style.boxShadow = `0 0 0 1px ${error ? "#ef4444" : "#7c3aed"}`
 					}
-
-					// Applica stili per stato disabilitato
-					if (disabled) {
-						input.style.opacity = "90"
-						input.style.color = "#6B7280"
-						input.style.backgroundColor = "#f8fafc"
+					const handleBlur = () => {
+						input.style.borderColor = error ? "#ef4444" : "#d1d5db"
+						input.style.boxShadow = "none"
 					}
-
-					// Gestisce il focus solo se non disabilitato
-					if (!disabled) {
-						const handleFocus = () => {
-							if (input) {
-								input.style.outline = "none"
-								input.style.borderColor = error ? "#ef4444" : "#7c3aed"
-								input.style.boxShadow = `0 0 0 1px ${error ? "#ef4444" : "#7c3aed"}`
-							}
-						}
-
-						const handleBlur = () => {
-							if (input) {
-								input.style.borderColor = error ? "#ef4444" : "#d1d5db"
-								input.style.boxShadow = "none"
-							}
-						}
-
-						input.addEventListener("focus", handleFocus)
-						input.addEventListener("blur", handleBlur)
-
-						return () => {
-							input.removeEventListener("focus", handleFocus)
-							input.removeEventListener("blur", handleBlur)
-						}
+					input.addEventListener("focus", handleFocus)
+					input.addEventListener("blur", handleBlur)
+					return () => {
+						input.removeEventListener("focus", handleFocus)
+						input.removeEventListener("blur", handleBlur)
 					}
 				}
 			}
 
-			// Applica gli stili immediatamente e dopo un breve delay per assicurarsi che il componente sia renderizzato
-			applyCustomStyles()
-			const timeoutId = setTimeout(applyCustomStyles, 100)
-
-			return () => clearTimeout(timeoutId)
-		}, [error, value, disabled]) // Riapplica quando cambiano errore, valore o stato disabled
+			// Prima applicazione immediata, poi dopo 50ms per attendere il render di Flowbite
+			const cleanup = applyCustomStyles()
+			const timeoutId = setTimeout(applyCustomStyles, 50)
+			return () => {
+				clearTimeout(timeoutId)
+				cleanup?.()
+			}
+		}, [error, value, disabled])
 
 		const dateValue = getDateValue()
 
 		return (
 			<div className={`w-full ${className || ""}`}>
 				{label && <label className="form-label">{label}</label>}
-				<div ref={ref} className="custom-datepicker">
+				<div ref={(el) => { innerRef.current = el; if (typeof ref === "function") ref(el); else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = el }} className="custom-datepicker">
 					<Datepicker
 						key={datepickerKey}
 						onChange={handleChange}
