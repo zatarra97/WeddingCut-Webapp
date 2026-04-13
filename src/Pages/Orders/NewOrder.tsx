@@ -1139,16 +1139,24 @@ const NewOrder = () => {
 						/* ── Modalità singola con dati: 3 colonne ── */
 						<div className="flex flex-col xl:flex-row gap-4 xl:gap-5">
 
-							{/* Pannello sinistro: coppia/data + aggiungi matrimonio */}
+							{/* Pannello sinistro: coppia/data + azioni */}
 							<aside className="xl:w-72 shrink-0">
 								<div className="xl:sticky xl:top-24 space-y-3">
 									{renderCoupleHeader()}
 									<button
 										type="button"
 										onClick={() => duplicateEntry(0)}
-										className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-[#c4b5fd] text-[#7c3aed] font-medium hover:bg-[#f5f3ff] transition-colors cursor-pointer text-sm"
+										className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[#c4b5fd] text-[#7c3aed] font-medium hover:bg-[#f5f3ff] transition-colors cursor-pointer text-sm"
 									>
-										<i className="fa-solid fa-plus" />
+										<i className="fa-solid fa-copy text-xs" />
+										Duplica matrimonio
+									</button>
+									<button
+										type="button"
+										onClick={addEntry}
+										className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-[#c4b5fd] text-[#7c3aed] font-medium hover:bg-[#f5f3ff] transition-colors cursor-pointer text-sm"
+									>
+										<i className="fa-solid fa-plus text-xs" />
 										Aggiungi un altro matrimonio
 									</button>
 								</div>
