@@ -1019,38 +1019,36 @@ const NewOrder = () => {
 											<div
 												key={i}
 												onClick={() => setSelectedIdx(i)}
-												className={`relative p-3 rounded-lg border-2 cursor-pointer transition-all ${isActive ? "border-[#7c3aed] bg-[#f5f3ff]" : "border-gray-200 hover:border-gray-300"}`}
+												className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${isActive ? "border-[#7c3aed] bg-[#f5f3ff]" : "border-gray-200 hover:border-gray-300"}`}
 											>
-												{/* Frecce riordino */}
-												<div className="absolute top-2 right-2 flex flex-col gap-0.5">
-													<button
-														type="button"
-														onClick={(ev) => { ev.stopPropagation(); moveEntry(i, "up") }}
-														disabled={i === 0}
-														className="w-5 h-5 flex items-center justify-center rounded text-gray-300 hover:text-[#7c3aed] hover:bg-[#ede9fe] disabled:opacity-20 disabled:cursor-not-allowed transition-colors cursor-pointer"
-														title="Sposta su"
-													>
-														<i className="fa-solid fa-chevron-up text-[10px]" />
-													</button>
-													<button
-														type="button"
-														onClick={(ev) => { ev.stopPropagation(); moveEntry(i, "down") }}
-														disabled={i === entries.length - 1}
-														className="w-5 h-5 flex items-center justify-center rounded text-gray-300 hover:text-[#7c3aed] hover:bg-[#ede9fe] disabled:opacity-20 disabled:cursor-not-allowed transition-colors cursor-pointer"
-														title="Sposta giù"
-													>
-														<i className="fa-solid fa-chevron-down text-[10px]" />
-													</button>
-												</div>
-
-												{/* Numero + nome coppia */}
-												<div className="flex items-center gap-2 pr-8">
+												{/* Riga superiore: badge numero + nome + frecce riordino */}
+												<div className="flex items-center gap-2">
 													<span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold shrink-0 ${isActive ? "bg-[#7c3aed] text-white" : "bg-gray-200 text-gray-500"}`}>
 														{i + 1}
 													</span>
-													<span className={`font-medium text-sm truncate ${isActive ? "text-[#6d28d9]" : "text-gray-800"}`}>
+													<span className={`font-medium text-sm truncate flex-1 min-w-0 ${isActive ? "text-[#6d28d9]" : "text-gray-800"}`}>
 														{e.coupleName || <em className="text-gray-400 font-normal">Matrimonio {i + 1}</em>}
 													</span>
+													<div className="flex gap-0.5 shrink-0">
+														<button
+															type="button"
+															onClick={(ev) => { ev.stopPropagation(); moveEntry(i, "up") }}
+															disabled={i === 0}
+															className="w-5 h-5 flex items-center justify-center rounded text-gray-300 hover:text-[#7c3aed] hover:bg-[#ede9fe] disabled:opacity-20 disabled:cursor-not-allowed transition-colors cursor-pointer"
+															title="Sposta su"
+														>
+															<i className="fa-solid fa-chevron-up text-[10px]" />
+														</button>
+														<button
+															type="button"
+															onClick={(ev) => { ev.stopPropagation(); moveEntry(i, "down") }}
+															disabled={i === entries.length - 1}
+															className="w-5 h-5 flex items-center justify-center rounded text-gray-300 hover:text-[#7c3aed] hover:bg-[#ede9fe] disabled:opacity-20 disabled:cursor-not-allowed transition-colors cursor-pointer"
+															title="Sposta giù"
+														>
+															<i className="fa-solid fa-chevron-down text-[10px]" />
+														</button>
+													</div>
 												</div>
 												{e.weddingDate && (
 													<div className="text-xs text-gray-400 mt-1 truncate pl-7">
