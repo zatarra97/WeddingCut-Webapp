@@ -481,6 +481,9 @@ const NewOrder = () => {
 		}
 	}
 
+	// ─── Flag: dati base inseriti (nome + data) ─────────────────────────────
+	const hasEnteredBasicInfo = entries[0].coupleName.trim() !== "" && entries[0].weddingDate !== ""
+
 	// ─── Render servizi ───────────────────────────────────────────────────────
 
 	const mainServices     = services.filter((s) => s.category === "main")
@@ -966,12 +969,40 @@ const NewOrder = () => {
 			<form onSubmit={handleSubmit}>
 				<div className="container mx-auto px-4 py-6 md:py-8 relative">
 
-					{isMulti ? (
+					{!isMulti && !hasEnteredBasicInfo ? (
+						/* ── Schermata iniziale: solo coppia + data, centrata ── */
+						<div className="flex items-center justify-center min-h-[calc(100vh-12rem)]">
+							<div className="w-full max-w-md">
+								<div className="text-center mb-8">
+									<div className="w-14 h-14 rounded-full bg-[#ede9fe] flex items-center justify-center mx-auto mb-4">
+										<i className="fa-solid fa-ring text-[#7c3aed] text-xl" />
+									</div>
+									<h1 className="text-2xl font-bold text-gray-900">Nuovo progetto</h1>
+									<p className="text-sm text-gray-500 mt-1.5">Inserisci i dati del matrimonio per iniziare</p>
+								</div>
+								<div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-6 md:p-8 space-y-5">
+									<Input
+										name="coupleName-0"
+										type="text"
+										label="Nomi della coppia *"
+										value={currentEntry.coupleName}
+										onChange={(e) => updateCurrentEntry("coupleName", e.target.value)}
+										placeholder="Es. Mario e Laura"
+									/>
+									<DateTimePicker
+										label="Data del matrimonio *"
+										value={currentEntry.weddingDate || null}
+										onChange={(date) => updateCurrentEntry("weddingDate", date ?? "")}
+									/>
+								</div>
+							</div>
+						</div>
+					) : isMulti ? (
 						/* ── Modalità multi: 3 pannelli ── */
 						<div className="flex flex-col xl:flex-row gap-4 xl:gap-5">
 
 							{/* Pannello sinistro: lista matrimoni */}
-							<aside className="xl:w-80 shrink-0">
+							<aside className="xl:w-72 shrink-0">
 								<div className="xl:sticky xl:top-24 rounded-xl border border-gray-200 bg-white shadow-sm p-4 flex flex-col gap-3">
 									<div>
 										<h2 className="text-base font-bold text-gray-900">
@@ -979,11 +1010,10 @@ const NewOrder = () => {
 											Matrimoni
 										</h2>
 										<p className="text-xs text-gray-400 mt-1 leading-relaxed">
-											L'ordine con cui sono visualizzati i matrimoni definisce lo stesso ordine di priorità che avremo durante il montaggio.
+											L'ordine definisce la priorità durante il montaggio.
 										</p>
 									</div>
 									{entries.map((e, i) => {
-										const tot = calcEntryTotal(e, services)
 										const isActive = i === selectedIdx
 										return (
 											<div
@@ -1013,21 +1043,24 @@ const NewOrder = () => {
 													</button>
 												</div>
 
-												<div className={`font-medium text-sm truncate pr-8 ${isActive ? "text-[#6d28d9]" : "text-gray-800"}`}>
-													{e.coupleName || <span className="italic text-gray-400">Matrimonio {i + 1}</span>}
+												{/* Numero + nome coppia */}
+												<div className="flex items-center gap-2 pr-8">
+													<span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold shrink-0 ${isActive ? "bg-[#7c3aed] text-white" : "bg-gray-200 text-gray-500"}`}>
+														{i + 1}
+													</span>
+													<span className={`font-medium text-sm truncate ${isActive ? "text-[#6d28d9]" : "text-gray-800"}`}>
+														{e.coupleName || <em className="text-gray-400 font-normal">Matrimonio {i + 1}</em>}
+													</span>
 												</div>
 												{e.weddingDate && (
-													<div className="text-xs text-gray-400 mt-0.5 truncate">
+													<div className="text-xs text-gray-400 mt-1 truncate pl-7">
 														<i className="fa-solid fa-ring text-[8px] mr-1 text-[#c4b5fd]" />
 														{formatDate(e.weddingDate)}
 													</div>
 												)}
-												<div className={`text-sm font-bold mt-1 mb-2 ${isActive ? "text-[#7c3aed]" : "text-gray-600"}`}>
-													€{tot.toFixed(2)}
-												</div>
 
 												{/* Azioni */}
-												<div className="flex gap-2">
+												<div className="flex gap-2 mt-2">
 													<button
 														type="button"
 														onClick={(ev) => { ev.stopPropagation(); duplicateEntry(i) }}
@@ -1103,17 +1136,17 @@ const NewOrder = () => {
 							</aside>
 						</div>
 					) : (
-						/* ── Modalità singola: 3 colonne (stessa struttura del multi) ── */
+						/* ── Modalità singola con dati: 3 colonne ── */
 						<div className="flex flex-col xl:flex-row gap-4 xl:gap-5">
 
 							{/* Pannello sinistro: coppia/data + aggiungi matrimonio */}
-							<aside className="xl:w-80 shrink-0">
+							<aside className="xl:w-72 shrink-0">
 								<div className="xl:sticky xl:top-24 space-y-3">
 									{renderCoupleHeader()}
 									<button
 										type="button"
 										onClick={() => duplicateEntry(0)}
-										className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-[#c4b5fd] text-[#7c3aed] font-medium hover:bg-[#f5f3ff] transition-colors cursor-pointer"
+										className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-[#c4b5fd] text-[#7c3aed] font-medium hover:bg-[#f5f3ff] transition-colors cursor-pointer text-sm"
 									>
 										<i className="fa-solid fa-plus" />
 										Aggiungi un altro matrimonio
