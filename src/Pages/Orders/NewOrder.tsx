@@ -1143,11 +1143,11 @@ const NewOrder = () => {
 									)}
 									{pkgDiscResult.mainPackage && (
 										<div className="flex justify-between items-center text-sm gap-2 text-green-700">
-											<span className="flex items-center gap-1.5">
-												<i className="fa-solid fa-tag text-xs" />
-												{pkgDiscResult.mainPackage.name}
+											<span className="flex flex-wrap items-center gap-1.5 min-w-0">
+												<i className="fa-solid fa-tag text-xs shrink-0" />
+												<span className="min-w-0">{pkgDiscResult.mainPackage.name}</span>
 												{pkgDiscResult.bonusApplied && (
-													<span className="text-xs bg-green-100 text-green-800 px-1.5 py-0.5 rounded-full font-medium">+ Bonus extra</span>
+													<span className="text-xs bg-green-100 text-green-800 px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap">+ Bonus extra</span>
 												)}
 											</span>
 											<span className="font-medium shrink-0">-€{pkgDiscResult.totalAmt.toFixed(2)}</span>
@@ -1365,7 +1365,7 @@ const NewOrder = () => {
 							</section>
 
 							{/* Pannello destro: riepilogo */}
-							<aside className="xl:w-72 shrink-0">
+							<aside className="xl:w-80 shrink-0">
 								<div className="xl:sticky xl:top-24">
 									{renderSummaryPanel(true)}
 								</div>
@@ -1423,7 +1423,7 @@ const NewOrder = () => {
 							</section>
 
 							{/* Pannello destro: riepilogo */}
-							<aside className="xl:w-72 shrink-0">
+							<aside className="xl:w-80 shrink-0">
 								<div className="xl:sticky xl:top-24">
 									{renderSummaryPanel(false)}
 								</div>
