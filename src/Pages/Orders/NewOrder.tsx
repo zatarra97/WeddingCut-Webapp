@@ -1123,7 +1123,7 @@ const NewOrder = () => {
 													{sel.tierLabel && (
 														<span className="block text-xs text-gray-400">
 															{sel.tierLabel}
-															{sel.duration != null && ` · ${formatDuration(sel.duration)}`}
+															{sel.duration != null && ` (${formatDuration(sel.duration)})`}
 														</span>
 													)}
 												</span>
@@ -1142,12 +1142,12 @@ const NewOrder = () => {
 										</div>
 									)}
 									{pkgDiscResult.mainPackage && (
-										<div className="flex justify-between items-center text-sm gap-2 text-green-700">
-											<span className="flex flex-wrap items-center gap-1.5 min-w-0">
-												<i className="fa-solid fa-tag text-xs shrink-0" />
-												<span className="min-w-0">{pkgDiscResult.mainPackage.name}</span>
+										<div className="flex justify-between items-start text-sm gap-2 text-green-700">
+											<span className="min-w-0 flex-1">
+												<i className="fa-solid fa-tag text-xs mr-1" />
+												{pkgDiscResult.mainPackage.name}
 												{pkgDiscResult.bonusApplied && (
-													<span className="text-xs bg-green-100 text-green-800 px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap">+ Bonus extra</span>
+													<span className="ml-1 text-xs bg-green-100 text-green-800 px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap">+ Bonus extra</span>
 												)}
 											</span>
 											<span className="font-medium shrink-0">-€{pkgDiscResult.totalAmt.toFixed(2)}</span>
