@@ -414,7 +414,7 @@ const ServiceDetail = () => {
 						<div className="space-y-3">
 							{optionFields.map((field, index) => (
 								<div key={field.id} className="flex gap-2 items-start border border-gray-200 rounded-lg p-3 bg-gray-50">
-									<div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-2">
+									<div className="flex-1 grid grid-cols-1 sm:grid-cols-4 gap-2">
 										<div>
 											<Input
 												label={index === 0 ? 'Nome opzione' : ''}
@@ -448,6 +448,25 @@ const ServiceDetail = () => {
 												)}
 											/>
 										</div>
+										<div className="flex items-end pb-1">
+											<Controller
+												name={`options.${index}.exclusive`}
+												control={control}
+												render={({ field: f }) => (
+													<label className="flex items-center gap-2 cursor-pointer select-none">
+														<input
+															type="checkbox"
+															checked={f.value ?? false}
+															onChange={(e) => f.onChange(e.target.checked)}
+															className="w-4 h-4 accent-primary"
+														/>
+														<span className="text-sm font-medium text-gray-700">
+															{index === 0 ? 'Esclusivo' : ''}
+														</span>
+													</label>
+												)}
+											/>
+										</div>
 									</div>
 									<button
 										type="button"
@@ -463,7 +482,7 @@ const ServiceDetail = () => {
 							)}
 							<button
 								type="button"
-								onClick={() => appendOption({ name: '', price: 0, discountRole: null })}
+								onClick={() => appendOption({ name: '', price: 0, discountRole: null, exclusive: false })}
 								className="btn secondary-wire text-sm"
 							>
 								<i className="fa-solid fa-plus mr-2" />

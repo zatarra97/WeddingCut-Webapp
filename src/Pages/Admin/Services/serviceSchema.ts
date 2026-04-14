@@ -34,6 +34,7 @@ const serviceOptionSchema = z.object({
 		z.number().min(0, 'Deve essere ≥ 0'),
 	),
 	discountRole: z.string().nullable().optional(),
+	exclusive: z.boolean().optional(),
 })
 
 export const serviceSchema = z
@@ -92,6 +93,7 @@ export interface ServiceOption {
 	name: string
 	price: number
 	discountRole?: string | null
+	exclusive?: boolean
 }
 
 export interface Service {

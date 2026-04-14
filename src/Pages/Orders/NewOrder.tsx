@@ -19,6 +19,7 @@ interface ServiceOption {
 	name: string
 	price: number
 	discountRole?: string | null
+	exclusive?: boolean
 }
 
 interface PublicService {
@@ -540,14 +541,27 @@ const NewOrder = () => {
 	}
 
 	const toggleOption = (servicePublicId: string, optionPublicId: string) => {
+		const svc = services.find((s) => s.publicId === servicePublicId)
+		const opt = svc?.options?.find((o) => o.publicId === optionPublicId)
+		const isExclusive = opt?.exclusive ?? false
 		updateCurrentEntry(
 			"selectedServices",
 			currentEntry.selectedServices.map((s) => {
 				if (s.publicId !== servicePublicId) return s
 				const current = s.selectedOptions ?? []
-				const next = current.includes(optionPublicId)
-					? current.filter((id) => id !== optionPublicId)
-					: [...current, optionPublicId]
+				let next: string[]
+				if (isExclusive) {
+					// Radio: deseleziona tutte le altre esclusive, seleziona questa
+					const exclusiveIds = new Set(svc?.options?.filter((o) => o.exclusive).map((o) => o.publicId) ?? [])
+					const withoutExclusives = current.filter((id) => !exclusiveIds.has(id))
+					next = current.includes(optionPublicId)
+						? withoutExclusives  // deseleziona se già selezionata
+						: [...withoutExclusives, optionPublicId]
+				} else {
+					next = current.includes(optionPublicId)
+						? current.filter((id) => id !== optionPublicId)
+						: [...current, optionPublicId]
+				}
 				return { ...s, selectedOptions: next }
 			}),
 		)
@@ -895,6 +909,7 @@ const NewOrder = () => {
 									const optOverridePrice = pkgDiscResult.priceOverrides.get(opt.publicId)
 									const displayPrice = optOverridePrice !== undefined ? optOverridePrice : opt.price
 									const isDiscounted = optOverridePrice !== undefined && optOverridePrice !== opt.price
+									const isExclusive = opt.exclusive ?? false
 									return (
 										<label
 											key={opt.publicId}
@@ -903,10 +918,10 @@ const NewOrder = () => {
 											}`}
 										>
 											<input
-												type="checkbox"
+												type={isExclusive ? "radio" : "checkbox"}
 												checked={isOptSelected}
 												onChange={() => toggleOption(service.publicId, opt.publicId)}
-												className="rounded border-gray-300 text-[#7c3aed] focus:ring-[#7c3aed] cursor-pointer"
+												className={`${isExclusive ? "" : "rounded"} border-gray-300 text-[#7c3aed] focus:ring-[#7c3aed] cursor-pointer`}
 											/>
 											<span className="flex-1 text-sm text-gray-700">{opt.name}</span>
 											<span className="text-sm font-semibold shrink-0">
@@ -916,7 +931,7 @@ const NewOrder = () => {
 														<span className="text-green-700">+€{displayPrice.toFixed(2)}</span>
 													</>
 												) : (
-													<span className="text-gray-900">+€{opt.price.toFixed(2)}</span>
+													<span className="text-gray-900">{opt.price > 0 ? `+€${opt.price.toFixed(2)}` : "Incluso"}</span>
 												)}
 											</span>
 										</label>
