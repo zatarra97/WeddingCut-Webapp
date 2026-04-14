@@ -13,7 +13,6 @@ interface CognitoUser {
 	enabled: boolean
 	status: string
 	createdAt?: string
-	lastAccessAt?: string
 	isAdmin: boolean
 }
 
@@ -88,8 +87,7 @@ const AdminUsers = () => {
 									<th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Utente</th>
 									<th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Ruolo</th>
 									<th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Registrato il</th>
-									<th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Ultimo accesso</th>
-									<th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Accesso</th>
+										<th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Accesso</th>
 									<th className="px-4 py-3" />
 								</tr>
 							</thead>
@@ -127,11 +125,6 @@ const AdminUsers = () => {
 											<td className="px-4 py-3 text-sm text-gray-500">
 												{user.createdAt
 													? new Date(user.createdAt).toLocaleDateString("it-IT")
-													: "—"}
-											</td>
-											<td className="px-4 py-3 text-sm text-gray-500">
-												{user.lastAccessAt
-													? new Date(user.lastAccessAt).toLocaleDateString("it-IT")
 													: "—"}
 											</td>
 											<td className="px-4 py-3">
