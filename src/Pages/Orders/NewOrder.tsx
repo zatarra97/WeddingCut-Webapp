@@ -413,6 +413,7 @@ const NewOrder = () => {
 	const [submitting,      setSubmitting]      = useState(false)
 	const [confirmDeleteIdx, setConfirmDeleteIdx] = useState<number | null>(null)
 	const [discountConfig,  setDiscountConfig]  = useState<DiscountConfig>({ quantityTiers: [], packages: [] })
+	const [showDiscountInfo, setShowDiscountInfo] = useState(false)
 
 	// Stato modale duplica
 	const [duplicateFromIdx,       setDuplicateFromIdx]       = useState<number | null>(null)
@@ -1302,6 +1303,17 @@ const NewOrder = () => {
 				)}
 			</div>
 
+			<div className="px-4 pb-2">
+				<button
+					type="button"
+					onClick={() => setShowDiscountInfo(true)}
+					className="text-xs text-[#7c3aed] hover:underline inline-flex items-center gap-1"
+				>
+					<i className="fa-solid fa-circle-info text-[10px]" />
+					Informazioni su sconti e pacchetti bonus
+				</button>
+			</div>
+
 			<div className="px-4 pb-4 flex flex-col gap-2">
 				<button
 					type="button"
@@ -1652,6 +1664,156 @@ const NewOrder = () => {
 						</div>
 					</div>
 				)}
+
+				{/* Modal informazioni sconti */}
+				{showDiscountInfo && (() => {
+					const roleMap: Record<string, string> = {}
+					for (const svc of services) {
+						if (svc.discountRole) roleMap[svc.discountRole] = svc.name
+						for (const opt of svc.options ?? []) {
+							if (opt.discountRole) roleMap[opt.discountRole] = opt.name
+						}
+					}
+					const mainPkgs = discountConfig.packages.filter(p => p.isBonus === 0)
+					const bonusPkg = discountConfig.packages.find(p => p.isBonus === 1)
+
+					const fmtRule = (rule: DiscountRule) => {
+						const target = rule.targetRole
+							? (roleMap[rule.targetRole] ?? rule.targetRole)
+							: rule.targetCategory === 'extra' ? 'Servizi extra' : (rule.targetCategory ?? '?')
+						return rule.type === 'new_price'
+							? target + ': €' + rule.value
+							: target + ': -' + rule.value + '%'
+					}
+
+					return (
+						<div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+							<div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowDiscountInfo(false)} />
+							<div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col">
+
+								{/* Header fisso */}
+								<div className="bg-[#ede9fe] px-5 py-4 border-b border-[#ddd6fe] flex items-center justify-between rounded-t-2xl shrink-0">
+									<div className="flex items-center gap-2">
+										<i className="fa-solid fa-tag text-[#7c3aed]" />
+										<h2 className="text-base font-semibold text-[#6d28d9]">Sconti e pacchetti bonus</h2>
+									</div>
+									<button type="button" onClick={() => setShowDiscountInfo(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+										<i className="fa-solid fa-xmark text-lg" />
+									</button>
+								</div>
+
+								{/* Corpo scrollabile */}
+								<div className="overflow-y-auto p-5 space-y-6">
+
+									{/* Pacchetti principali */}
+									{mainPkgs.length > 0 && (
+										<section>
+											<h3 className="text-sm font-semibold text-gray-700 mb-3">Pacchetti sconto</h3>
+											<p className="text-xs text-gray-500 mb-3">
+												Quando selezioni la combinazione richiesta in un singolo matrimonio, i prezzi dei servizi coinvolti vengono automaticamente aggiornati.
+											</p>
+											<div className="space-y-3">
+												{mainPkgs.map((pkg, i) => {
+													const allRoles = [...pkg.requiredRoles, ...(pkg.requiredRolesAnyOf ?? [])]
+													return (
+														<div key={i} className="border border-[#ddd6fe] rounded-xl p-3 bg-[#faf5ff]/60">
+															<p className="text-sm font-medium text-gray-800 mb-2">{pkg.name}</p>
+															<div className="mb-2.5">
+																<p className="text-[11px] text-gray-400 uppercase tracking-wide mb-1.5">Servizi necessari</p>
+																<div className="flex flex-wrap gap-1">
+																	{allRoles.map(r => (
+																		<span key={r} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[#ede9fe] text-[#6d28d9]">
+																			{roleMap[r] ?? r}
+																		</span>
+																	))}
+																</div>
+															</div>
+															<div>
+																<p className="text-[11px] text-gray-400 uppercase tracking-wide mb-1.5">Prezzi con sconto</p>
+																<ul className="space-y-1">
+																	{pkg.discounts.map((rule, j) => (
+																		<li key={j} className="flex items-center gap-1.5 text-xs text-[#6d28d9] font-medium">
+																			<i className="fa-solid fa-tag text-[10px] shrink-0" />
+																			{fmtRule(rule)}
+																		</li>
+																	))}
+																</ul>
+															</div>
+														</div>
+													)
+												})}
+											</div>
+										</section>
+									)}
+
+									{/* Bonus extra */}
+									{bonusPkg && (
+										<section>
+											<h3 className="text-sm font-semibold text-gray-700 mb-3">Bonus extra</h3>
+											<div className="border border-green-200 rounded-xl p-3 bg-green-50/60">
+												<p className="text-sm text-gray-700 mb-2.5">
+													Quando è attivo almeno un pacchetto principale, tutti i <strong>servizi extra</strong> vengono scontati automaticamente:
+												</p>
+												<ul className="space-y-1">
+													{bonusPkg.discounts.map((rule, j) => (
+														<li key={j} className="flex items-center gap-1.5 text-xs text-green-700 font-medium">
+															<i className="fa-solid fa-tag text-[10px] shrink-0" />
+															{fmtRule(rule)}
+														</li>
+													))}
+												</ul>
+											</div>
+										</section>
+									)}
+
+									{/* Sconti quantità */}
+									{discountConfig.quantityTiers.some(t => t.discountPct > 0) && (
+										<section>
+											<h3 className="text-sm font-semibold text-gray-700 mb-2">Sconti quantità</h3>
+											<p className="text-xs text-gray-500 mb-3">
+												Applicati sull'intero ordine in base al numero totale di servizi principali (Teaser, Highlight, Wedding Film) su tutti i matrimoni.
+											</p>
+											<div className="rounded-xl border border-gray-200 overflow-hidden">
+												<table className="w-full text-xs">
+													<thead className="bg-gray-50 border-b border-gray-200">
+														<tr>
+															<th className="text-left py-2 px-3 font-medium text-gray-600">N° unità</th>
+															<th className="text-right py-2 px-3 font-medium text-gray-600">Sconto ordine</th>
+														</tr>
+													</thead>
+													<tbody>
+														{discountConfig.quantityTiers.map((t, i) => (
+															<tr key={i} className="border-b border-gray-100 last:border-0">
+																<td className="py-2 px-3 text-gray-700">
+																	{t.maxUnits != null ? t.minUnits + ' – ' + t.maxUnits : t.minUnits + '+'}
+																</td>
+																<td className="py-2 px-3 text-right font-semibold text-[#6d28d9]">
+																	{t.discountPct > 0 ? '-' + t.discountPct + '%' : '—'}
+																</td>
+															</tr>
+														))}
+													</tbody>
+												</table>
+											</div>
+										</section>
+									)}
+
+								</div>
+
+								{/* Footer */}
+								<div className="px-5 py-3 border-t border-gray-100 shrink-0">
+									<button
+										type="button"
+										onClick={() => setShowDiscountInfo(false)}
+										className="w-full py-2 rounded-lg border border-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors cursor-pointer"
+									>
+										Chiudi
+									</button>
+								</div>
+							</div>
+						</div>
+					)
+				})()}
 			</form>
 		</div>
 	)
