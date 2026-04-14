@@ -26,6 +26,16 @@ const priceTierSchema = z.object({
 	),
 })
 
+const serviceOptionSchema = z.object({
+	publicId: z.string().optional(),
+	name: z.string().min(1, 'Nome opzione obbligatorio'),
+	price: z.preprocess(
+		(v) => (v === '' || v == null ? 0 : Number(v)),
+		z.number().min(0, 'Deve essere ≥ 0'),
+	),
+	discountRole: z.string().nullable().optional(),
+})
+
 export const serviceSchema = z
 	.object({
 		name: z.string().min(1, 'Nome obbligatorio').max(200, 'Massimo 200 caratteri'),
@@ -44,6 +54,7 @@ export const serviceSchema = z
 		sortOrder: optionalInt,
 		isActive: z.boolean(),
 		discountRole: z.string().nullable().optional(),
+		options: z.array(serviceOptionSchema).optional().nullable(),
 	})
 	.superRefine((data, ctx) => {
 		if (data.pricingType === 'fixed' && data.basePrice == null) {
@@ -76,6 +87,13 @@ export interface PriceTier {
 	price: number
 }
 
+export interface ServiceOption {
+	publicId?: string
+	name: string
+	price: number
+	discountRole?: string | null
+}
+
 export interface Service {
 	id: number
 	publicId?: string
@@ -91,6 +109,7 @@ export interface Service {
 	sortOrder?: number | null
 	isActive?: number
 	discountRole?: string | null
+	options?: ServiceOption[] | null
 	createdAt?: string
 	updatedAt?: string
 }

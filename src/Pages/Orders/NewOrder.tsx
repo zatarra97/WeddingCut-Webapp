@@ -14,6 +14,13 @@ interface PriceTier {
 	price: number
 }
 
+interface ServiceOption {
+	publicId: string
+	name: string
+	price: number
+	discountRole?: string | null
+}
+
 interface PublicService {
 	publicId: string
 	name: string
@@ -27,6 +34,7 @@ interface PublicService {
 	restrictedToService?: string | null
 	sortOrder?: number | null
 	discountRole?: string | null
+	options?: ServiceOption[] | null
 }
 
 interface DiscountQuantityTier {
@@ -68,6 +76,7 @@ interface SelectedService {
 	tierLabel?: string | null
 	duration?: number | null
 	notes?: string
+	selectedOptions?: string[]   // publicId delle opzioni selezionate
 }
 
 interface EntryForm {
@@ -181,7 +190,12 @@ function calcEntryMainSubtotal(
 		const svc = services.find((s) => s.publicId === sel.publicId)
 		if (!svc || svc.category === "delivery") return sum
 		const price = overrides.has(sel.publicId) ? overrides.get(sel.publicId)! : (getSelectedPrice(svc, sel) ?? 0)
-		return sum + price
+		const optionsTotal = (sel.selectedOptions ?? []).reduce((oSum, optId) => {
+			const opt = svc.options?.find((o) => o.publicId === optId)
+			if (!opt) return oSum
+			return oSum + (overrides.has(optId) ? overrides.get(optId)! : opt.price)
+		}, 0)
+		return sum + price + optionsTotal
 	}, 0)
 }
 
@@ -199,11 +213,17 @@ function bestPackageForEntry(
 	services: PublicService[],
 	packages: DiscountPackageRule[],
 ): DiscountPackageRule | null {
-	const entryRoles = new Set(
-		entry.selectedServices
-			.map((sel) => services.find((s) => s.publicId === sel.publicId)?.discountRole)
-			.filter((r): r is string => !!r),
-	)
+	const entryRoles = new Set<string>()
+	for (const sel of entry.selectedServices) {
+		const svc = services.find((s) => s.publicId === sel.publicId)
+		if (!svc) continue
+		if (svc.discountRole) entryRoles.add(svc.discountRole)
+		// Aggiunge i ruoli delle opzioni selezionate
+		for (const optId of (sel.selectedOptions ?? [])) {
+			const opt = svc.options?.find((o) => o.publicId === optId)
+			if (opt?.discountRole) entryRoles.add(opt.discountRole)
+		}
+	}
 	const applicable = packages
 		.filter((p) => !p.isBonus)
 		.filter((p) => {
@@ -231,17 +251,28 @@ function buildPriceOverrides(
 		for (const sel of entry.selectedServices) {
 			const svc = services.find((s) => s.publicId === sel.publicId)
 			if (!svc) continue
+			// Sconto sul servizio principale
 			const matchesRole     = !!rule.targetRole     && svc.discountRole === rule.targetRole
 			const matchesCategory = !!rule.targetCategory && svc.category     === rule.targetCategory
-			if (!matchesRole && !matchesCategory) continue
-			const originalPrice = getSelectedPrice(svc, sel) ?? 0
-			const newPrice = rule.type === "new_price"
-				? rule.value
-				: Math.round(originalPrice * (1 - rule.value / 100) * 100) / 100
-			// Se ci sono più regole applicabili allo stesso servizio, prende il prezzo più basso
-			const existing = overrides.get(sel.publicId)
-			if (existing === undefined || newPrice < existing) {
-				overrides.set(sel.publicId, newPrice)
+			if (matchesRole || matchesCategory) {
+				const originalPrice = getSelectedPrice(svc, sel) ?? 0
+				const newPrice = rule.type === "new_price"
+					? rule.value
+					: Math.round(originalPrice * (1 - rule.value / 100) * 100) / 100
+				const existing = overrides.get(sel.publicId)
+				if (existing === undefined || newPrice < existing) overrides.set(sel.publicId, newPrice)
+			}
+			// Sconto sulle opzioni (solo per targetRole, le opzioni non hanno categoria)
+			if (rule.targetRole) {
+				for (const optId of (sel.selectedOptions ?? [])) {
+					const opt = svc.options?.find((o) => o.publicId === optId)
+					if (!opt || opt.discountRole !== rule.targetRole) continue
+					const newPrice = rule.type === "new_price"
+						? rule.value
+						: Math.round(opt.price * (1 - rule.value / 100) * 100) / 100
+					const existing = overrides.get(optId)
+					if (existing === undefined || newPrice < existing) overrides.set(optId, newPrice)
+				}
 			}
 		}
 	}
@@ -262,13 +293,22 @@ function calcPackageDiscount(
 	const bonusApplied = !!bonusPkg
 	if (bonusPkg) allRules.push(...bonusPkg.discounts)
 	const priceOverrides = buildPriceOverrides(entry, services, allRules)
-	// Calcola l'importo totale risparmiato
+	// Calcola l'importo totale risparmiato (servizi + opzioni)
 	let totalAmt = 0
 	for (const [publicId, newPrice] of priceOverrides) {
+		// Controlla se è un servizio
 		const sel = entry.selectedServices.find((s) => s.publicId === publicId)
 		const svc = services.find((s) => s.publicId === publicId)
-		if (!sel || !svc) continue
-		totalAmt += (getSelectedPrice(svc, sel) ?? 0) - newPrice
+		if (sel && svc) {
+			totalAmt += (getSelectedPrice(svc, sel) ?? 0) - newPrice
+			continue
+		}
+		// Controlla se è un'opzione
+		for (const s of entry.selectedServices) {
+			const parentSvc = services.find((sv) => sv.publicId === s.publicId)
+			const opt = parentSvc?.options?.find((o) => o.publicId === publicId)
+			if (opt) { totalAmt += opt.price - newPrice; break }
+		}
 	}
 	totalAmt = Math.round(totalAmt * 100) / 100
 	return { mainPackage, bonusApplied, priceOverrides, totalAmt }
@@ -342,6 +382,17 @@ function buildServicesPayload(
 		} else if (svc.pricingType === "percentage") {
 			item.percentageValue = svc.percentageValue
 			item.price = fd
+		}
+		if ((sel.selectedOptions ?? []).length > 0) {
+			item.options = (sel.selectedOptions ?? []).map((optId) => {
+				const opt = svc.options?.find((o) => o.publicId === optId)!
+				return {
+					publicId: optId,
+					name: opt.name,
+					price: overrides.get(optId) ?? opt.price,
+					discountRole: opt.discountRole ?? undefined,
+				}
+			})
 		}
 		return item
 	})
@@ -484,6 +535,20 @@ const NewOrder = () => {
 			currentEntry.selectedServices.map((s) =>
 				s.publicId === publicId ? { ...s, notes } : s,
 			),
+		)
+	}
+
+	const toggleOption = (servicePublicId: string, optionPublicId: string) => {
+		updateCurrentEntry(
+			"selectedServices",
+			currentEntry.selectedServices.map((s) => {
+				if (s.publicId !== servicePublicId) return s
+				const current = s.selectedOptions ?? []
+				const next = current.includes(optionPublicId)
+					? current.filter((id) => id !== optionPublicId)
+					: [...current, optionPublicId]
+				return { ...s, selectedOptions: next }
+			}),
 		)
 	}
 
@@ -820,6 +885,45 @@ const NewOrder = () => {
 							</p>
 						)}
 
+						{/* Opzioni del servizio */}
+						{(service.options ?? []).length > 0 && (
+							<div className="space-y-2">
+								<p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Opzioni</p>
+								{(service.options ?? []).map((opt) => {
+									const isOptSelected = sel?.selectedOptions?.includes(opt.publicId) ?? false
+									const optOverridePrice = pkgDiscResult.priceOverrides.get(opt.publicId)
+									const displayPrice = optOverridePrice !== undefined ? optOverridePrice : opt.price
+									const isDiscounted = optOverridePrice !== undefined && optOverridePrice !== opt.price
+									return (
+										<label
+											key={opt.publicId}
+											className={`flex items-center gap-3 p-2 rounded-lg border cursor-pointer transition-colors ${
+												isOptSelected ? "border-[#c4b5fd] bg-[#faf5ff]" : "border-gray-200 bg-white hover:border-gray-300"
+											}`}
+										>
+											<input
+												type="checkbox"
+												checked={isOptSelected}
+												onChange={() => toggleOption(service.publicId, opt.publicId)}
+												className="rounded border-gray-300 text-[#7c3aed] focus:ring-[#7c3aed] cursor-pointer"
+											/>
+											<span className="flex-1 text-sm text-gray-700">{opt.name}</span>
+											<span className="text-sm font-semibold shrink-0">
+												{isDiscounted ? (
+													<>
+														<span className="line-through text-gray-400 text-xs mr-1">+€{opt.price.toFixed(2)}</span>
+														<span className="text-green-700">+€{displayPrice.toFixed(2)}</span>
+													</>
+												) : (
+													<span className="text-gray-900">+€{opt.price.toFixed(2)}</span>
+												)}
+											</span>
+										</label>
+									)
+								})}
+							</div>
+						)}
+
 						<Textarea
 							name={`notes-${service.publicId}-${selectedIdx}`}
 							label="Specifiche aggiuntive"
@@ -1117,17 +1221,41 @@ const NewOrder = () => {
 										}
 
 										return (
-											<div key={sel.publicId} className="flex justify-between items-start text-sm gap-2">
-												<span className="text-gray-700 leading-snug">
-													{svc.name}
-													{sel.tierLabel && (
-														<span className="block text-xs text-gray-400">
-															{sel.tierLabel}
-															{sel.duration != null && ` (${formatDuration(sel.duration)})`}
-														</span>
-													)}
-												</span>
-												<span className="font-medium text-gray-900 shrink-0">{priceLabel}</span>
+											<div key={sel.publicId}>
+												<div className="flex justify-between items-start text-sm gap-2">
+													<span className="text-gray-700 leading-snug">
+														{svc.name}
+														{sel.tierLabel && (
+															<span className="block text-xs text-gray-400">
+																{sel.tierLabel}
+																{sel.duration != null && ` (${formatDuration(sel.duration)})`}
+															</span>
+														)}
+													</span>
+													<span className="font-medium text-gray-900 shrink-0">{priceLabel}</span>
+												</div>
+												{(sel.selectedOptions ?? []).map((optId) => {
+													const opt = svc.options?.find((o) => o.publicId === optId)
+													if (!opt) return null
+													const optOverride = pkgDiscResult.priceOverrides.get(optId)
+													const optPrice = optOverride !== undefined ? optOverride : opt.price
+													const optDiscounted = optOverride !== undefined && optOverride !== opt.price
+													return (
+														<div key={optId} className="flex justify-between items-center text-xs gap-2 mt-0.5 pl-2">
+															<span className="text-gray-500">↳ {opt.name}</span>
+															<span className="shrink-0">
+																{optDiscounted ? (
+																	<>
+																		<span className="line-through text-gray-400 mr-1">+€{opt.price.toFixed(2)}</span>
+																		<span className="text-green-700 font-medium">+€{optPrice.toFixed(2)}</span>
+																	</>
+																) : (
+																	<span className="text-gray-700">+€{optPrice.toFixed(2)}</span>
+																)}
+															</span>
+														</div>
+													)
+												})}
 											</div>
 										)
 									})}

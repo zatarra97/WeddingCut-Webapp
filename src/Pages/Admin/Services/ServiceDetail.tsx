@@ -43,6 +43,7 @@ const DEFAULT_VALUES: ServiceFormData = {
 	sortOrder: null,
 	isActive: true,
 	discountRole: null,
+	options: [],
 }
 
 const ServiceDetail = () => {
@@ -73,6 +74,11 @@ const ServiceDetail = () => {
 		name: 'priceTiers',
 	})
 
+	const { fields: optionFields, append: appendOption, remove: removeOption } = useFieldArray({
+		control,
+		name: 'options',
+	})
+
 	useEffect(() => {
 		if (!isEdit) return
 		const load = async () => {
@@ -91,6 +97,7 @@ const ServiceDetail = () => {
 					sortOrder: data.sortOrder ?? null,
 					isActive: data.isActive === undefined ? true : data.isActive !== 0,
 					discountRole: data.discountRole ?? null,
+					options: data.options ?? [],
 				})
 			} catch {
 				toast.error('Errore nel caricamento del servizio.')
@@ -129,6 +136,14 @@ const ServiceDetail = () => {
 				payload.basePrice = formData.basePrice ?? null
 				payload.priceTiers = null
 			}
+
+			// Genera publicId per le opzioni nuove (senza publicId)
+			payload.options = (formData.options ?? []).map((opt) => ({
+				...opt,
+				publicId: opt.publicId || crypto.randomUUID(),
+				price: Number(opt.price),
+			}))
+			if (payload.options.length === 0) payload.options = null
 
 			if (isEdit) {
 				await updateItem('services', id!, payload)
@@ -388,6 +403,73 @@ const ServiceDetail = () => {
 								</button>
 							</div>
 						)}
+					</FormSection>
+
+					{/* Opzioni servizio */}
+					<FormSection title="Opzioni">
+						<p className="text-xs text-gray-500 mb-3">
+							Opzioni aggiuntive selezionabili dall'utente all'interno di questo servizio (es. montaggio non cronologico).
+							A differenza degli extra, le opzioni non hanno categoria propria e non ricevono lo sconto Bonus automaticamente.
+						</p>
+						<div className="space-y-3">
+							{optionFields.map((field, index) => (
+								<div key={field.id} className="flex gap-2 items-start border border-gray-200 rounded-lg p-3 bg-gray-50">
+									<div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-2">
+										<div>
+											<Input
+												label={index === 0 ? 'Nome opzione' : ''}
+												{...register(`options.${index}.name`)}
+												error={(errors.options as any)?.[index]?.name}
+												placeholder="Es. Non Chronological Edit"
+											/>
+										</div>
+										<div>
+											<Input
+												label={index === 0 ? 'Prezzo (€)' : ''}
+												type="number"
+												step="0.01"
+												{...register(`options.${index}.price`)}
+												error={(errors.options as any)?.[index]?.price}
+												placeholder="0.00"
+											/>
+										</div>
+										<div>
+											<Controller
+												name={`options.${index}.discountRole`}
+												control={control}
+												render={({ field: f }) => (
+													<Select
+														label={index === 0 ? 'Ruolo sconti' : ''}
+														name={`options.${index}.discountRole`}
+														value={f.value ?? ''}
+														onChange={(e) => f.onChange(e.target.value || null)}
+														options={DISCOUNT_ROLE_OPTIONS}
+													/>
+												)}
+											/>
+										</div>
+									</div>
+									<button
+										type="button"
+										onClick={() => removeOption(index)}
+										className={`text-red-400 hover:text-red-600 p-2 flex-shrink-0 ${index === 0 ? 'mt-6' : ''}`}
+									>
+										<i className="fa-solid fa-trash text-sm" />
+									</button>
+								</div>
+							))}
+							{(errors.options as any)?.message && (
+								<p className="text-red-500 text-xs">{(errors.options as any).message}</p>
+							)}
+							<button
+								type="button"
+								onClick={() => appendOption({ name: '', price: 0, discountRole: null })}
+								className="btn secondary-wire text-sm"
+							>
+								<i className="fa-solid fa-plus mr-2" />
+								Aggiungi opzione
+							</button>
+						</div>
 					</FormSection>
 				</form>
 			</div>
