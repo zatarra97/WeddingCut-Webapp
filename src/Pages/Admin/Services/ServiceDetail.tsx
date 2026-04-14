@@ -22,6 +22,14 @@ const PRICING_TYPE_OPTIONS = [
 	{ value: 'percentage', label: 'Percentuale su totale' },
 ]
 
+const DISCOUNT_ROLE_OPTIONS = [
+	{ value: '', label: 'Nessuno (non conta per sconti)' },
+	{ value: 'teaser', label: 'Teaser' },
+	{ value: 'highlight', label: 'Highlight' },
+	{ value: 'weddingfilm', label: 'WeddingFilm' },
+	{ value: 'package', label: 'Pacchetto' },
+]
+
 const DEFAULT_VALUES: ServiceFormData = {
 	name: '',
 	description: '',
@@ -34,6 +42,7 @@ const DEFAULT_VALUES: ServiceFormData = {
 	restrictedToService: null,
 	sortOrder: null,
 	isActive: true,
+	discountRole: null,
 }
 
 const ServiceDetail = () => {
@@ -81,6 +90,7 @@ const ServiceDetail = () => {
 					restrictedToService: data.restrictedToService ?? null,
 					sortOrder: data.sortOrder ?? null,
 					isActive: data.isActive === undefined ? true : data.isActive !== 0,
+					discountRole: data.discountRole ?? null,
 				})
 			} catch {
 				toast.error('Errore nel caricamento del servizio.')
@@ -104,6 +114,7 @@ const ServiceDetail = () => {
 				sortOrder: formData.sortOrder ?? null,
 				durationDescription: formData.durationDescription?.trim() || null,
 				restrictedToService: formData.restrictedToService?.trim() || null,
+				discountRole: formData.discountRole?.trim() || null,
 			}
 			if (formData.pricingType === 'fixed') {
 				payload.basePrice = formData.basePrice
@@ -274,6 +285,24 @@ const ServiceDetail = () => {
 								</p>
 							</div>
 						)}
+						<div className="mt-4">
+							<Controller
+								name="discountRole"
+								control={control}
+								render={({ field }) => (
+									<Select
+										label="Ruolo sconti"
+										name="discountRole"
+										value={field.value ?? ''}
+										onChange={(e) => field.onChange(e.target.value || null)}
+										options={DISCOUNT_ROLE_OPTIONS}
+									/>
+								)}
+							/>
+							<p className="text-xs text-gray-400 mt-1">
+								Indica se questo servizio conta come unità per gli sconti quantità e/o fa parte di un pacchetto sconto.
+							</p>
+						</div>
 					</FormSection>
 
 					{/* Prezzi */}

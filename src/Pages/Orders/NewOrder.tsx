@@ -26,6 +26,41 @@ interface PublicService {
 	priceTiers?: PriceTier[] | null
 	restrictedToService?: string | null
 	sortOrder?: number | null
+	discountRole?: string | null
+}
+
+interface DiscountQuantityTier {
+	minUnits: number
+	maxUnits: number | null
+	discountPct: number
+}
+
+interface DiscountRule {
+	targetRole?: string       // es. "teaser"
+	targetCategory?: string   // es. "extra"
+	type: "new_price" | "pct_off"
+	value: number
+}
+
+interface DiscountPackageRule {
+	name: string
+	requiredRoles: string[]
+	requiredRolesAnyOf: string[] | null  // almeno uno di questi (OR)
+	discounts: DiscountRule[]            // regole di sconto per-ruolo / per-categoria
+	unitCountIfApplied: number | null    // unità da contare per questo pacchetto
+	isBonus: number
+}
+
+interface PackageDiscountResult {
+	mainPackage: DiscountPackageRule | null
+	bonusApplied: boolean
+	priceOverrides: Map<string, number>  // publicId → prezzo effettivo
+	totalAmt: number
+}
+
+interface DiscountConfig {
+	quantityTiers: DiscountQuantityTier[]
+	packages: DiscountPackageRule[]
 }
 
 interface SelectedService {
@@ -52,6 +87,9 @@ interface EntryForm {
 }
 
 // ─── Costanti ─────────────────────────────────────────────────────────────────
+
+// Ruoli che contano come "unità" per lo sconto quantità
+const UNIT_ROLES = new Set(["teaser", "highlight", "weddingfilm"])
 
 const CAMERA_OPTIONS: { value: "1-4" | "5-6" | "7+"; label: string; surcharge: number }[] = [
 	{ value: "1-4", label: "1 – 4", surcharge: 0   },
@@ -134,11 +172,16 @@ function getMinPrice(service: PublicService): number | null {
 	return null
 }
 
-function calcEntryMainSubtotal(entry: EntryForm, services: PublicService[]): number {
+function calcEntryMainSubtotal(
+	entry: EntryForm,
+	services: PublicService[],
+	overrides: Map<string, number> = new Map(),
+): number {
 	return entry.selectedServices.reduce((sum, sel) => {
 		const svc = services.find((s) => s.publicId === sel.publicId)
 		if (!svc || svc.category === "delivery") return sum
-		return sum + (getSelectedPrice(svc, sel) ?? 0)
+		const price = overrides.has(sel.publicId) ? overrides.get(sel.publicId)! : (getSelectedPrice(svc, sel) ?? 0)
+		return sum + price
 	}, 0)
 }
 
@@ -150,16 +193,137 @@ function calcEntryFastDelivery(entry: EntryForm, services: PublicService[], main
 	return Math.round(mainSubtotal * (Number(deliverySvc.percentageValue) / 100) * 100) / 100
 }
 
-function calcEntryTotal(entry: EntryForm, services: PublicService[]): number {
-	const main = calcEntryMainSubtotal(entry, services)
-	const fd = calcEntryFastDelivery(entry, services, main)
-	const cs = CAMERA_OPTIONS.find((o) => o.value === entry.cameraCount)?.surcharge ?? 0
+// Trova il pacchetto principale (non bonus) più specifico applicabile all'entry
+function bestPackageForEntry(
+	entry: EntryForm,
+	services: PublicService[],
+	packages: DiscountPackageRule[],
+): DiscountPackageRule | null {
+	const entryRoles = new Set(
+		entry.selectedServices
+			.map((sel) => services.find((s) => s.publicId === sel.publicId)?.discountRole)
+			.filter((r): r is string => !!r),
+	)
+	const applicable = packages
+		.filter((p) => !p.isBonus)
+		.filter((p) => {
+			const andOk = p.requiredRoles.every((r) => entryRoles.has(r))
+			const anyOfOk = !p.requiredRolesAnyOf?.length || p.requiredRolesAnyOf.some((r) => entryRoles.has(r))
+			return andOk && anyOfOk
+		})
+	if (!applicable.length) return null
+	// Più specifico = più ruoli richiesti totali
+	return applicable.sort((a, b) => {
+		const scoreA = a.requiredRoles.length + (a.requiredRolesAnyOf?.length ? 1 : 0)
+		const scoreB = b.requiredRoles.length + (b.requiredRolesAnyOf?.length ? 1 : 0)
+		return scoreB - scoreA
+	})[0]
+}
+
+// Costruisce la mappa publicId → prezzo effettivo in base alle regole di sconto
+function buildPriceOverrides(
+	entry: EntryForm,
+	services: PublicService[],
+	rules: DiscountRule[],
+): Map<string, number> {
+	const overrides = new Map<string, number>()
+	for (const rule of rules) {
+		for (const sel of entry.selectedServices) {
+			const svc = services.find((s) => s.publicId === sel.publicId)
+			if (!svc) continue
+			const matchesRole     = !!rule.targetRole     && svc.discountRole === rule.targetRole
+			const matchesCategory = !!rule.targetCategory && svc.category     === rule.targetCategory
+			if (!matchesRole && !matchesCategory) continue
+			const originalPrice = getSelectedPrice(svc, sel) ?? 0
+			const newPrice = rule.type === "new_price"
+				? rule.value
+				: Math.round(originalPrice * (1 - rule.value / 100) * 100) / 100
+			// Se ci sono più regole applicabili allo stesso servizio, prende il prezzo più basso
+			const existing = overrides.get(sel.publicId)
+			if (existing === undefined || newPrice < existing) {
+				overrides.set(sel.publicId, newPrice)
+			}
+		}
+	}
+	return overrides
+}
+
+function calcPackageDiscount(
+	entry: EntryForm,
+	services: PublicService[],
+	packages: DiscountPackageRule[],
+): PackageDiscountResult {
+	const mainPackage = bestPackageForEntry(entry, services, packages)
+	if (!mainPackage) {
+		return { mainPackage: null, bonusApplied: false, priceOverrides: new Map(), totalAmt: 0 }
+	}
+	const allRules = [...mainPackage.discounts]
+	const bonusPkg = packages.find((p) => p.isBonus === 1)
+	const bonusApplied = !!bonusPkg
+	if (bonusPkg) allRules.push(...bonusPkg.discounts)
+	const priceOverrides = buildPriceOverrides(entry, services, allRules)
+	// Calcola l'importo totale risparmiato
+	let totalAmt = 0
+	for (const [publicId, newPrice] of priceOverrides) {
+		const sel = entry.selectedServices.find((s) => s.publicId === publicId)
+		const svc = services.find((s) => s.publicId === publicId)
+		if (!sel || !svc) continue
+		totalAmt += (getSelectedPrice(svc, sel) ?? 0) - newPrice
+	}
+	totalAmt = Math.round(totalAmt * 100) / 100
+	return { mainPackage, bonusApplied, priceOverrides, totalAmt }
+}
+
+function countEntryUnits(
+	entry: EntryForm,
+	services: PublicService[],
+	packages: DiscountPackageRule[],
+): number {
+	const unitSels = entry.selectedServices.filter((sel) => {
+		const svc = services.find((s) => s.publicId === sel.publicId)
+		return svc?.discountRole != null && UNIT_ROLES.has(svc.discountRole)
+	})
+	if (!unitSels.length) return 0
+	const appliedPkg = bestPackageForEntry(entry, services, packages)
+	if (appliedPkg?.unitCountIfApplied != null) return appliedPkg.unitCountIfApplied
+	return unitSels.length
+}
+
+function calcQuantityDiscount(
+	entries: EntryForm[],
+	services: PublicService[],
+	tiers: DiscountQuantityTier[],
+	packages: DiscountPackageRule[],
+	orderSubtotal: number,
+): { pct: number; amt: number; unitCount: number } {
+	const unitCount = entries.reduce((sum, e) => sum + countEntryUnits(e, services, packages), 0)
+	const tier = [...tiers]
+		.sort((a, b) => b.minUnits - a.minUnits)
+		.find((t) => unitCount >= t.minUnits)
+	const pct = tier?.discountPct ?? 0
+	const amt = Math.round(orderSubtotal * (pct / 100) * 100) / 100
+	return { pct, amt, unitCount }
+}
+
+function calcEntryTotal(
+	entry: EntryForm,
+	services: PublicService[],
+	packages: DiscountPackageRule[] = [],
+): number {
+	const pkgDisc = calcPackageDiscount(entry, services, packages)
+	const main = calcEntryMainSubtotal(entry, services, pkgDisc.priceOverrides)
+	const fd   = calcEntryFastDelivery(entry, services, main)
+	const cs   = CAMERA_OPTIONS.find((o) => o.value === entry.cameraCount)?.surcharge ?? 0
 	return main + fd + cs
 }
 
-function buildServicesPayload(entry: EntryForm, services: PublicService[]) {
-	const main = calcEntryMainSubtotal(entry, services)
-	const fd = calcEntryFastDelivery(entry, services, main)
+function buildServicesPayload(
+	entry: EntryForm,
+	services: PublicService[],
+	overrides: Map<string, number> = new Map(),
+) {
+	const main = calcEntryMainSubtotal(entry, services, overrides)
+	const fd   = calcEntryFastDelivery(entry, services, main)
 	return entry.selectedServices.map((sel) => {
 		const svc = services.find((s) => s.publicId === sel.publicId)!
 		const item: Record<string, any> = {
@@ -170,10 +334,11 @@ function buildServicesPayload(entry: EntryForm, services: PublicService[]) {
 		}
 		if (svc.pricingType === "tiered") {
 			item.tierLabel = sel.tierLabel
-			item.duration = sel.duration ?? null
-			item.price = svc.priceTiers?.find((t) => t.label === sel.tierLabel)?.price ?? 0
+			item.duration  = sel.duration ?? null
+			const origPrice = svc.priceTiers?.find((t) => t.label === sel.tierLabel)?.price ?? 0
+			item.price = overrides.get(sel.publicId) ?? origPrice
 		} else if (svc.pricingType === "fixed") {
-			item.price = svc.basePrice ?? 0
+			item.price = overrides.get(sel.publicId) ?? (svc.basePrice ?? 0)
 		} else if (svc.pricingType === "percentage") {
 			item.percentageValue = svc.percentageValue
 			item.price = fd
@@ -196,6 +361,7 @@ const NewOrder = () => {
 	const [loadingServices, setLoadingServices] = useState(true)
 	const [submitting,      setSubmitting]      = useState(false)
 	const [confirmDeleteIdx, setConfirmDeleteIdx] = useState<number | null>(null)
+	const [discountConfig,  setDiscountConfig]  = useState<DiscountConfig>({ quantityTiers: [], packages: [] })
 
 	// Stato modale duplica
 	const [duplicateFromIdx,       setDuplicateFromIdx]       = useState<number | null>(null)
@@ -203,8 +369,14 @@ const NewOrder = () => {
 	const [duplicateWeddingDate,   setDuplicateWeddingDate]   = useState("")
 
 	useEffect(() => {
-		genericGet("user/services")
-			.then((data: PublicService[]) => setServices(data))
+		Promise.all([
+			genericGet("user/services"),
+			genericGet("user/discount-config"),
+		])
+			.then(([svcs, dc]: [PublicService[], DiscountConfig]) => {
+				setServices(svcs)
+				setDiscountConfig(dc)
+			})
 			.catch(() => toast.error("Impossibile caricare i servizi disponibili"))
 			.finally(() => setLoadingServices(false))
 	}, [])
@@ -326,14 +498,26 @@ const NewOrder = () => {
 
 	// ─── Calcolo prezzi entry corrente ────────────────────────────────────────
 
-	const mainExtraSubtotal = calcEntryMainSubtotal(currentEntry, services)
+	const pkgDiscResult      = calcPackageDiscount(currentEntry, services, discountConfig.packages)
+	const mainExtraSubtotal  = calcEntryMainSubtotal(currentEntry, services, pkgDiscResult.priceOverrides)
 	const fastDeliveryAmount = calcEntryFastDelivery(currentEntry, services, mainExtraSubtotal)
 	const entryServicesTotal = mainExtraSubtotal + fastDeliveryAmount
-	const cameraSurcharge = CAMERA_OPTIONS.find((o) => o.value === currentEntry.cameraCount)?.surcharge ?? 0
-	const entryTotalPrice = entryServicesTotal + cameraSurcharge
+	const cameraSurcharge    = CAMERA_OPTIONS.find((o) => o.value === currentEntry.cameraCount)?.surcharge ?? 0
+	const entryTotalPrice    = entryServicesTotal + cameraSurcharge
 
-	// Totale ordine (somma di tutte le entries)
-	const orderTotalPrice = entries.reduce((sum, e) => sum + calcEntryTotal(e, services), 0)
+	// Totale ordine (somma di tutte le entries dopo sconti pacchetto) e sconto quantità
+	const orderSubtotalBeforeQty = entries.reduce(
+		(sum, e) => sum + calcEntryTotal(e, services, discountConfig.packages),
+		0,
+	)
+	const quantityDiscount = calcQuantityDiscount(
+		entries,
+		services,
+		discountConfig.quantityTiers,
+		discountConfig.packages,
+		orderSubtotalBeforeQty,
+	)
+	const orderTotalPrice = orderSubtotalBeforeQty - quantityDiscount.amt
 
 	const hasMissingTier = currentEntry.selectedServices.some((sel) => {
 		const svc = services.find((s) => s.publicId === sel.publicId)
@@ -368,49 +552,55 @@ const NewOrder = () => {
 		setSubmitting(true)
 		try {
 			const entriesPayload = entries.map((entry) => {
-				const main = calcEntryMainSubtotal(entry, services)
-				const fd = calcEntryFastDelivery(entry, services, main)
-				const cs = CAMERA_OPTIONS.find((o) => o.value === entry.cameraCount)?.surcharge ?? 0
+				const pkgDisc = calcPackageDiscount(entry, services, discountConfig.packages)
+				const main    = calcEntryMainSubtotal(entry, services, pkgDisc.priceOverrides)
+				const fd      = calcEntryFastDelivery(entry, services, main)
+				const cs      = CAMERA_OPTIONS.find((o) => o.value === entry.cameraCount)?.surcharge ?? 0
 				return {
-					coupleName:       entry.coupleName.trim(),
-					weddingDate:      entry.weddingDate,
-					selectedServices: buildServicesPayload(entry, services),
-					deliveryMethod:   entry.deliveryMethod,
-					materialLink:     entry.deliveryMethod === "cloud_link" ? entry.materialLink.trim() : null,
-					materialSizeGb:   Number(entry.materialSizeGb),
-					cameraCount:      entry.cameraCount,
-					exportFps:        entry.exportFps,
-					exportBitrate:    entry.exportBitrate,
-					exportAspect:     entry.exportAspect,
-					exportResolution: entry.exportResolution,
-					servicesTotal:    main + fd,
-					cameraSurcharge:  cs,
-					totalPrice:       main + fd + cs,
-					generalNotes:     entry.generalNotes.trim() || null,
-					referenceVideo:   entry.referenceVideo.trim() || null,
+					coupleName:         entry.coupleName.trim(),
+					weddingDate:        entry.weddingDate,
+					selectedServices:   buildServicesPayload(entry, services, pkgDisc.priceOverrides),
+					deliveryMethod:     entry.deliveryMethod,
+					materialLink:       entry.deliveryMethod === "cloud_link" ? entry.materialLink.trim() : null,
+					materialSizeGb:     Number(entry.materialSizeGb),
+					cameraCount:        entry.cameraCount,
+					exportFps:          entry.exportFps,
+					exportBitrate:      entry.exportBitrate,
+					exportAspect:       entry.exportAspect,
+					exportResolution:   entry.exportResolution,
+					servicesTotal:      main + fd,
+					cameraSurcharge:    cs,
+					packageDiscountPct: pkgDisc.totalAmt > 0 ? null : null,  // snapshot non più % flat
+					packageDiscountAmt: pkgDisc.totalAmt > 0 ? pkgDisc.totalAmt : null,
+					totalPrice:         main + fd + cs,
+					generalNotes:       entry.generalNotes.trim() || null,
+					referenceVideo:     entry.referenceVideo.trim() || null,
 				}
 			})
 
 			const first = entriesPayload[0]
 			const payload: Record<string, any> = {
 				// Prima entry come retrocompat ordine padre
-				coupleName:       first.coupleName,
-				weddingDate:      first.weddingDate,
-				deliveryMethod:   first.deliveryMethod,
-				materialLink:     first.materialLink,
-				materialSizeGb:   first.materialSizeGb,
-				cameraCount:      first.cameraCount,
-				exportFps:        first.exportFps,
-				exportBitrate:    first.exportBitrate,
-				exportAspect:     first.exportAspect,
-				exportResolution: first.exportResolution,
-				selectedServices: first.selectedServices,
-				servicesTotal:    first.servicesTotal,
-				cameraSurcharge:  first.cameraSurcharge,
-				totalPrice:       orderTotalPrice,
-				isBatch:          isMulti ? 1 : 0,
-				isDraft:          false,
-				entries:          entriesPayload,
+				coupleName:          first.coupleName,
+				weddingDate:         first.weddingDate,
+				deliveryMethod:      first.deliveryMethod,
+				materialLink:        first.materialLink,
+				materialSizeGb:      first.materialSizeGb,
+				cameraCount:         first.cameraCount,
+				exportFps:           first.exportFps,
+				exportBitrate:       first.exportBitrate,
+				exportAspect:        first.exportAspect,
+				exportResolution:    first.exportResolution,
+				selectedServices:    first.selectedServices,
+				servicesTotal:       first.servicesTotal,
+				cameraSurcharge:     first.cameraSurcharge,
+				totalPrice:          orderTotalPrice,
+				quantityDiscountPct: quantityDiscount.pct || null,
+				quantityDiscountAmt: quantityDiscount.amt || null,
+				quantityUnitCount:   quantityDiscount.unitCount || null,
+				isBatch:             isMulti ? 1 : 0,
+				isDraft:             false,
+				entries:             entriesPayload,
 			}
 
 			const result = await genericPost("user/orders", payload)
@@ -429,47 +619,53 @@ const NewOrder = () => {
 		setSubmitting(true)
 		try {
 			const entriesPayload = entries.map((entry) => {
-				const main = calcEntryMainSubtotal(entry, services)
-				const fd = calcEntryFastDelivery(entry, services, main)
-				const cs = CAMERA_OPTIONS.find((o) => o.value === entry.cameraCount)?.surcharge ?? 0
+				const pkgDisc = calcPackageDiscount(entry, services, discountConfig.packages)
+				const main    = calcEntryMainSubtotal(entry, services, pkgDisc.priceOverrides)
+				const fd      = calcEntryFastDelivery(entry, services, main)
+				const cs      = CAMERA_OPTIONS.find((o) => o.value === entry.cameraCount)?.surcharge ?? 0
 				return {
-					coupleName:       entry.coupleName.trim() || null,
-					weddingDate:      entry.weddingDate || null,
-					selectedServices: buildServicesPayload(entry, services),
-					deliveryMethod:   entry.deliveryMethod,
-					materialLink:     entry.deliveryMethod === "cloud_link" ? entry.materialLink.trim() : null,
-					materialSizeGb:   entry.materialSizeGb ? Number(entry.materialSizeGb) : null,
-					cameraCount:      entry.cameraCount,
-					exportFps:        entry.exportFps,
-					exportBitrate:    entry.exportBitrate,
-					exportAspect:     entry.exportAspect,
-					exportResolution: entry.exportResolution,
-					servicesTotal:    main + fd,
-					cameraSurcharge:  cs,
-					totalPrice:       main + fd + cs,
-					generalNotes:     entry.generalNotes.trim() || null,
-					referenceVideo:   entry.referenceVideo.trim() || null,
+					coupleName:         entry.coupleName.trim() || null,
+					weddingDate:        entry.weddingDate || null,
+					selectedServices:   buildServicesPayload(entry, services, pkgDisc.priceOverrides),
+					deliveryMethod:     entry.deliveryMethod,
+					materialLink:       entry.deliveryMethod === "cloud_link" ? entry.materialLink.trim() : null,
+					materialSizeGb:     entry.materialSizeGb ? Number(entry.materialSizeGb) : null,
+					cameraCount:        entry.cameraCount,
+					exportFps:          entry.exportFps,
+					exportBitrate:      entry.exportBitrate,
+					exportAspect:       entry.exportAspect,
+					exportResolution:   entry.exportResolution,
+					servicesTotal:      main + fd,
+					cameraSurcharge:    cs,
+					packageDiscountPct: null,
+					packageDiscountAmt: pkgDisc.totalAmt > 0 ? pkgDisc.totalAmt : null,
+					totalPrice:         main + fd + cs,
+					generalNotes:       entry.generalNotes.trim() || null,
+					referenceVideo:     entry.referenceVideo.trim() || null,
 				}
 			})
 			const first = entriesPayload[0]
 			const payload: Record<string, any> = {
-				coupleName:       first.coupleName,
-				weddingDate:      first.weddingDate,
-				deliveryMethod:   first.deliveryMethod,
-				materialLink:     first.materialLink,
-				materialSizeGb:   first.materialSizeGb,
-				cameraCount:      first.cameraCount,
-				exportFps:        first.exportFps,
-				exportBitrate:    first.exportBitrate,
-				exportAspect:     first.exportAspect,
-				exportResolution: first.exportResolution,
-				selectedServices: first.selectedServices,
-				servicesTotal:    first.servicesTotal,
-				cameraSurcharge:  first.cameraSurcharge,
-				totalPrice:       orderTotalPrice,
-				isBatch:          isMulti ? 1 : 0,
-				isDraft:          true,
-				entries:          entriesPayload,
+				coupleName:          first.coupleName,
+				weddingDate:         first.weddingDate,
+				deliveryMethod:      first.deliveryMethod,
+				materialLink:        first.materialLink,
+				materialSizeGb:      first.materialSizeGb,
+				cameraCount:         first.cameraCount,
+				exportFps:           first.exportFps,
+				exportBitrate:       first.exportBitrate,
+				exportAspect:        first.exportAspect,
+				exportResolution:    first.exportResolution,
+				selectedServices:    first.selectedServices,
+				servicesTotal:       first.servicesTotal,
+				cameraSurcharge:     first.cameraSurcharge,
+				totalPrice:          orderTotalPrice,
+				quantityDiscountPct: quantityDiscount.pct || null,
+				quantityDiscountAmt: quantityDiscount.amt || null,
+				quantityUnitCount:   quantityDiscount.unitCount || null,
+				isBatch:             isMulti ? 1 : 0,
+				isDraft:             true,
+				entries:             entriesPayload,
 			}
 			const result = await genericPost("user/orders", payload)
 			toast.success("Bozza salvata!")
@@ -835,7 +1031,7 @@ const NewOrder = () => {
 				{isMulti && showOrderTotal ? (
 					<>
 						{entries.map((e, i) => {
-							const tot = calcEntryTotal(e, services)
+							const tot = calcEntryTotal(e, services, discountConfig.packages)
 							return (
 								<div
 									key={i}
@@ -854,6 +1050,14 @@ const NewOrder = () => {
 								</div>
 							)
 						})}
+						{quantityDiscount.pct > 0 && (
+							<div className="flex justify-between items-center text-sm gap-2 text-green-700">
+								<span>
+									Sconto quantità ({quantityDiscount.unitCount} unità, -{quantityDiscount.pct}%)
+								</span>
+								<span className="font-medium shrink-0">-€{quantityDiscount.amt.toFixed(2)}</span>
+							</div>
+						)}
 						<div className="border-t border-gray-200 pt-3 flex justify-between font-bold text-base">
 							<span className="text-gray-800">Totale</span>
 							<span className="text-[#7c3aed]">€{orderTotalPrice.toFixed(2)}</span>
@@ -869,18 +1073,40 @@ const NewOrder = () => {
 									{currentEntry.selectedServices.map((sel) => {
 										const svc = services.find((s) => s.publicId === sel.publicId)
 										if (!svc) return null
+										const overriddenPrice = pkgDiscResult.priceOverrides.get(sel.publicId)
 
 										let priceLabel: React.ReactNode
 										if (svc.pricingType === "tiered") {
 											const rawPrice = sel.tierLabel
 												? svc.priceTiers?.find((t) => t.label === sel.tierLabel)?.price
 												: null
-											const price = rawPrice != null ? Number(rawPrice) : null
-											priceLabel = price != null
-												? `€${price.toFixed(2)}`
-												: <em className="text-amber-500 font-normal text-xs">fascia non scelta</em>
+											const origPrice = rawPrice != null ? Number(rawPrice) : null
+											if (origPrice == null) {
+												priceLabel = <em className="text-amber-500 font-normal text-xs">fascia non scelta</em>
+											} else if (overriddenPrice !== undefined && overriddenPrice !== origPrice) {
+												priceLabel = (
+													<span className="text-right">
+														<span className="line-through text-gray-400 text-xs mr-1">€{origPrice.toFixed(2)}</span>
+														<span className="text-green-700 font-semibold">€{overriddenPrice.toFixed(2)}</span>
+													</span>
+												)
+											} else {
+												priceLabel = `€${origPrice.toFixed(2)}`
+											}
 										} else if (svc.pricingType === "fixed") {
-											priceLabel = svc.basePrice != null ? `€${Number(svc.basePrice).toFixed(2)}` : "—"
+											const origPrice = svc.basePrice != null ? Number(svc.basePrice) : null
+											if (origPrice == null) {
+												priceLabel = "—"
+											} else if (overriddenPrice !== undefined && overriddenPrice !== origPrice) {
+												priceLabel = (
+													<span className="text-right">
+														<span className="line-through text-gray-400 text-xs mr-1">€{origPrice.toFixed(2)}</span>
+														<span className="text-green-700 font-semibold">€{overriddenPrice.toFixed(2)}</span>
+													</span>
+												)
+											} else {
+												priceLabel = `€${origPrice.toFixed(2)}`
+											}
 										} else if (svc.pricingType === "percentage") {
 											priceLabel = (
 												<span className="text-[#7c3aed]">
@@ -913,6 +1139,18 @@ const NewOrder = () => {
 												<span className="block text-xs text-gray-400">Supplemento multi-camera</span>
 											</span>
 											<span className="font-medium text-orange-600 shrink-0">+€{cameraSurcharge.toFixed(2)}</span>
+										</div>
+									)}
+									{pkgDiscResult.mainPackage && (
+										<div className="flex justify-between items-center text-sm gap-2 text-green-700">
+											<span className="flex items-center gap-1.5">
+												<i className="fa-solid fa-tag text-xs" />
+												{pkgDiscResult.mainPackage.name}
+												{pkgDiscResult.bonusApplied && (
+													<span className="text-xs bg-green-100 text-green-800 px-1.5 py-0.5 rounded-full font-medium">+ Bonus extra</span>
+												)}
+											</span>
+											<span className="font-medium shrink-0">-€{pkgDiscResult.totalAmt.toFixed(2)}</span>
 										</div>
 									)}
 								</div>

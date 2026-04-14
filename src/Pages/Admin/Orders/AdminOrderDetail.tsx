@@ -32,6 +32,8 @@ interface OrderEntry {
 	exportResolution?: string | null
 	servicesTotal?: number | null
 	cameraSurcharge?: number | null
+	packageDiscountPct?: number | null
+	packageDiscountAmt?: number | null
 	totalPrice?: number | null
 }
 
@@ -72,6 +74,9 @@ interface Order {
 	proposedTotalPrice?: number | null
 	desiredDeliveryDate?: string
 	invoiceUrl?: string | null
+	quantityDiscountPct?: number | null
+	quantityDiscountAmt?: number | null
+	quantityUnitCount?: number | null
 	entries?: OrderEntry[]
 	createdAt: string
 	updatedAt: string
@@ -613,6 +618,12 @@ const AdminOrderDetail = () => {
 																			<span>+€{Number(entry.cameraSurcharge).toFixed(2)}</span>
 																		</div>
 																	)}
+																	{entry.packageDiscountAmt != null && Number(entry.packageDiscountAmt) > 0 && (
+																		<div className="flex justify-between text-xs text-green-600">
+																			<span>Sconto pacchetto{entry.packageDiscountPct != null && ` (-${Number(entry.packageDiscountPct)}%)`}</span>
+																			<span>-€{Number(entry.packageDiscountAmt).toFixed(2)}</span>
+																		</div>
+																	)}
 																	{entry.totalPrice != null && (
 																		<div className="flex justify-between text-sm font-bold border-t border-gray-100 pt-1.5 mt-1">
 																			<span className="text-gray-800">Totale matrimonio</span>
@@ -849,9 +860,16 @@ const AdminOrderDetail = () => {
 										className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
 									/>
 									{order.totalPrice != null && (
-										<p className="text-xs text-gray-400 mt-1">
-											Prezzo calcolato: €{Number(order.totalPrice).toFixed(2)}
-										</p>
+										<div className="text-xs text-gray-400 mt-1 space-y-0.5">
+											<p>Prezzo calcolato: €{Number(order.totalPrice).toFixed(2)}</p>
+											{order.quantityDiscountAmt != null && Number(order.quantityDiscountAmt) > 0 && (
+												<p className="text-green-600">
+													Sconto quantità: -€{Number(order.quantityDiscountAmt).toFixed(2)}
+													{order.quantityDiscountPct != null && ` (-${Number(order.quantityDiscountPct)}%)`}
+													{order.quantityUnitCount != null && ` · ${order.quantityUnitCount} unità`}
+												</p>
+											)}
+										</div>
 									)}
 								</div>
 

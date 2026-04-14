@@ -39,6 +39,8 @@ interface OrderEntry {
 	exportResolution?: string | null
 	servicesTotal?: number | null
 	cameraSurcharge?: number | null
+	packageDiscountPct?: number | null
+	packageDiscountAmt?: number | null
 	totalPrice?: number | null
 }
 
@@ -61,6 +63,9 @@ interface Order {
 	selectedServices: StoredService[] | string
 	servicesTotal?: number | null
 	cameraSurcharge?: number | null
+	quantityDiscountPct?: number | null
+	quantityDiscountAmt?: number | null
+	quantityUnitCount?: number | null
 	totalPrice?: number | null
 	status: "draft" | "pending" | "quote_ready" | "in_progress" | "under_review" | "awaiting_payment" | "completed" | "cancelled"
 	adminNotes?: string | null
@@ -572,6 +577,15 @@ const OrderDetail = () => {
 																		<span className="font-medium text-orange-600 text-xs">+€{Number(entry.cameraSurcharge).toFixed(2)}</span>
 																	</div>
 																)}
+																{entry.packageDiscountAmt != null && Number(entry.packageDiscountAmt) > 0 && (
+																	<div className="flex justify-between items-center text-sm py-1">
+																		<span className="text-gray-500 text-xs">
+																			Sconto pacchetto
+																			{entry.packageDiscountPct != null && ` (-${Number(entry.packageDiscountPct)}%)`}
+																		</span>
+																		<span className="font-medium text-green-600 text-xs">-€{Number(entry.packageDiscountAmt).toFixed(2)}</span>
+																	</div>
+																)}
 															</div>
 														) : (
 															<p className="text-xs text-gray-400 italic">Nessun servizio.</p>
@@ -1077,6 +1091,15 @@ const OrderDetail = () => {
 												</span>
 											</div>
 										))}
+										{order.quantityDiscountAmt != null && Number(order.quantityDiscountAmt) > 0 && (
+											<div className="flex justify-between items-center text-sm gap-2 text-green-700">
+												<span>
+													Sconto quantità{order.quantityDiscountPct != null && ` (-${Number(order.quantityDiscountPct)}%)`}
+													{order.quantityUnitCount != null && ` · ${order.quantityUnitCount} unità`}
+												</span>
+												<span className="font-medium shrink-0">-€{Number(order.quantityDiscountAmt).toFixed(2)}</span>
+											</div>
+										)}
 										<div className="border-t border-gray-200 pt-3 flex justify-between font-bold text-base">
 											<span className="text-gray-800">Totale</span>
 											<span className="text-[#7c3aed]">
@@ -1127,6 +1150,14 @@ const OrderDetail = () => {
 														<span className="block text-xs text-gray-400">Supplemento multi-camera</span>
 													</span>
 													<span className="font-medium text-orange-600 shrink-0">+€{cameraSurcharge.toFixed(2)}</span>
+												</div>
+											)}
+											{order.quantityDiscountAmt != null && Number(order.quantityDiscountAmt) > 0 && (
+												<div className="flex justify-between items-center text-sm gap-2 text-green-700">
+													<span>
+														Sconto quantità{order.quantityDiscountPct != null && ` (-${Number(order.quantityDiscountPct)}%)`}
+													</span>
+													<span className="font-medium shrink-0">-€{Number(order.quantityDiscountAmt).toFixed(2)}</span>
 												</div>
 											)}
 										</div>

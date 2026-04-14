@@ -43,6 +43,7 @@ export const serviceSchema = z
 		restrictedToService: z.string().nullable().optional(),
 		sortOrder: optionalInt,
 		isActive: z.boolean(),
+		discountRole: z.string().nullable().optional(),
 	})
 	.superRefine((data, ctx) => {
 		if (data.pricingType === 'fixed' && data.basePrice == null) {
@@ -89,6 +90,7 @@ export interface Service {
 	restrictedToService?: string | null
 	sortOrder?: number | null
 	isActive?: number
+	discountRole?: string | null
 	createdAt?: string
 	updatedAt?: string
 }

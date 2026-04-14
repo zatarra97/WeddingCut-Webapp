@@ -270,6 +270,16 @@ export const genericPatch = async (endpoint: string, data: any = {}): Promise<an
 	}
 }
 
+export const genericPut = async (endpoint: string, data: any = {}): Promise<any> => {
+	try {
+		const response = await apiClient.put(`${import.meta.env.VITE_BACKEND_URL}/${endpoint}`, data)
+		return response.data
+	} catch (error: any) {
+		console.error("Error:", error.response?.data?.error?.message || error.message)
+		throw error
+	}
+}
+
 export const genericDelete = async (endpoint: string): Promise<void> => {
 	try {
 		await apiClient.delete(`${import.meta.env.VITE_BACKEND_URL}/${endpoint}`)

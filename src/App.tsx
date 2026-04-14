@@ -13,6 +13,7 @@ import AdminOrderDetail from './Pages/Admin/Orders/AdminOrderDetail'
 import AdminMessageList from './Pages/Admin/Messages/AdminMessageList'
 import AdminMessageDetail from './Pages/Admin/Messages/AdminMessageDetail'
 import AdminUsers from './Pages/Admin/Users/AdminUsers'
+import AdminDiscountConfig from './Pages/Admin/Discounts/AdminDiscountConfig'
 import MessageList from './Pages/Messages/MessageList'
 import MessageDetail from './Pages/Messages/MessageDetail'
 import Login from './Pages/Auth/Login'
@@ -205,6 +206,7 @@ const AppContent: React.FC = () => {
             <Route path="/admin/messages" element={<ProtectedRoute requiredRole={USER_ROLES.ADMIN}><AdminMessageList /></ProtectedRoute>} />
             <Route path="/admin/messages/:publicId" element={<ProtectedRoute requiredRole={USER_ROLES.ADMIN}><AdminMessageDetail /></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute requiredRole={USER_ROLES.ADMIN}><AdminUsers /></ProtectedRoute>} />
+            <Route path="/admin/configurazione-sconti" element={<ProtectedRoute requiredRole={USER_ROLES.ADMIN}><AdminDiscountConfig /></ProtectedRoute>} />
             <Route path="/accesso/login" element={<Login setIsAuthenticated={setIsAuthenticated} setUser={setUser} setUserRole={setUserRole} />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

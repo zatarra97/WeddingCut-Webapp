@@ -9,11 +9,12 @@ interface AdminLayoutProps {
 }
 
 const NAV_ITEMS = [
-	{ to: "/admin",          icon: "fa-solid fa-gauge",          label: "Dashboard", end: true  },
-	{ to: "/admin/services", icon: "fa-solid fa-film",           label: "Servizi",   end: false },
-	{ to: "/admin/orders",   icon: "fa-solid fa-clipboard-list", label: "Ordini",    end: false },
-	{ to: "/admin/messages", icon: "fa-solid fa-comments",       label: "Messaggi",  end: false },
-	{ to: "/admin/users",    icon: "fa-solid fa-users",          label: "Utenti",    end: false },
+	{ to: "/admin",                    icon: "fa-solid fa-gauge",          label: "Dashboard", end: true  },
+	{ to: "/admin/services",           icon: "fa-solid fa-film",           label: "Servizi",   end: false },
+	{ to: "/admin/orders",             icon: "fa-solid fa-clipboard-list", label: "Ordini",    end: false },
+	{ to: "/admin/messages",           icon: "fa-solid fa-comments",       label: "Messaggi",  end: false },
+	{ to: "/admin/users",              icon: "fa-solid fa-users",          label: "Utenti",    end: false },
+	{ to: "/admin/configurazione-sconti", icon: "fa-solid fa-tag",         label: "Sconti",    end: false },
 ]
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children, userEmail, onLogout }) => {
